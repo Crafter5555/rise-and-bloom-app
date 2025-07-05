@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { format, isAfter, isToday, isTomorrow } from "date-fns";
+import { ScheduleButton } from "@/components/today/ScheduleButton";
 
 interface Task {
   id: string;
@@ -29,6 +30,7 @@ export const TasksList = ({ onRefresh, onScheduleTask }: TasksListProps) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('all');
+  const [scheduledTasks, setScheduledTasks] = useState<Record<string, any[]>>({});
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -44,6 +46,9 @@ export const TasksList = ({ onRefresh, onScheduleTask }: TasksListProps) => {
 
       if (error) throw error;
       setTasks(data || []);
+      
+      // Fetch scheduled tasks
+      await fetchScheduledTasks(data || []);
     } catch (error) {
       console.error('Error fetching tasks:', error);
       toast({
@@ -53,6 +58,32 @@ export const TasksList = ({ onRefresh, onScheduleTask }: TasksListProps) => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchScheduledTasks = async (taskList: Task[]) => {
+    if (!user || taskList.length === 0) return;
+    
+    try {
+      const taskIds = taskList.map(task => task.id);
+      const { data, error } = await supabase
+        .from('daily_plans')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('item_type', 'task')
+        .in('item_id', taskIds);
+
+      if (error) throw error;
+      
+      const scheduledByTask = data?.reduce((acc, plan) => {
+        if (!acc[plan.item_id]) acc[plan.item_id] = [];
+        acc[plan.item_id].push(plan);
+        return acc;
+      }, {} as Record<string, any[]>) || {};
+      
+      setScheduledTasks(scheduledByTask);
+    } catch (error) {
+      console.error('Error fetching scheduled tasks:', error);
     }
   };
 
@@ -136,6 +167,11 @@ export const TasksList = ({ onRefresh, onScheduleTask }: TasksListProps) => {
     return task.due_date && !task.completed && isAfter(new Date(), new Date(task.due_date));
   };
 
+  const handleScheduled = () => {
+    fetchTasks();
+    onRefresh?.();
+  };
+
   const filteredTasks = tasks.filter(task => {
     switch (filter) {
       case 'pending': return !task.completed;
@@ -186,71 +222,102 @@ export const TasksList = ({ onRefresh, onScheduleTask }: TasksListProps) => {
         </div>
       ) : (
         <div className="space-y-3">
-          {filteredTasks.map((task) => (
-            <Card key={task.id} className={`p-4 ${isOverdue(task) ? 'border-red-200 bg-red-50' : ''} ${task.completed ? 'opacity-75' : ''}`}>
-              <div className="flex items-start gap-3">
-                <Checkbox
-                  checked={task.completed}
-                  onCheckedChange={(checked) => toggleTaskComplete(task.id, !!checked)}
-                  className="mt-1"
-                />
-                
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h4 className={`font-medium ${task.completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
-                      {task.title}
-                    </h4>
-                    <Badge className={getPriorityColor(task.priority)}>
-                      {task.priority}
-                    </Badge>
-                    {isOverdue(task) && (
-                      <Badge variant="destructive">Overdue</Badge>
+          {filteredTasks.map((task) => {
+            const taskSchedules = scheduledTasks[task.id] || [];
+            
+            return (
+              <Card key={task.id} className={`p-4 ${isOverdue(task) ? 'border-red-200 bg-red-50' : ''} ${task.completed ? 'opacity-75' : ''}`}>
+                <div className="flex items-start gap-3">
+                  <Checkbox
+                    checked={task.completed}
+                    onCheckedChange={(checked) => toggleTaskComplete(task.id, !!checked)}
+                    className="mt-1"
+                  />
+                  
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h4 className={`font-medium ${task.completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+                        {task.title}
+                      </h4>
+                      <Badge className={getPriorityColor(task.priority)}>
+                        {task.priority}
+                      </Badge>
+                      {isOverdue(task) && (
+                        <Badge variant="destructive">Overdue</Badge>
+                      )}
+                    </div>
+                    
+                    {task.description && (
+                      <p className="text-sm text-muted-foreground mb-3">{task.description}</p>
                     )}
-                  </div>
-                  
-                  {task.description && (
-                    <p className="text-sm text-muted-foreground mb-3">{task.description}</p>
-                  )}
-                  
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                    {task.due_date && (
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        <span>{getDueDateDisplay(task.due_date)}</span>
+                    
+                    {/* Scheduled instances */}
+                    {taskSchedules.length > 0 && (
+                      <div className="mb-3">
+                        <div className="text-xs text-muted-foreground mb-2">Scheduled for:</div>
+                        <div className="flex flex-wrap gap-2">
+                          {taskSchedules.map((schedule) => (
+                            <div key={schedule.id} className="flex items-center gap-2">
+                              <Badge variant="outline" className="text-xs">
+                                {format(new Date(schedule.plan_date), 'MMM d')}
+                                {schedule.scheduled_time && ` at ${schedule.scheduled_time}`}
+                              </Badge>
+                              <ScheduleButton
+                                item={{ ...task, type: 'task' }}
+                                onScheduled={handleScheduled}
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 px-2 text-xs"
+                                existingPlanId={schedule.id}
+                                isRescheduling={true}
+                                initialDate={new Date(schedule.plan_date)}
+                                initialTime={schedule.scheduled_time}
+                                initialDuration={schedule.estimated_duration_minutes}
+                              />
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
-                    <span>Created {format(new Date(task.created_at), 'MMM d, yyyy')}</span>
-                    {task.completed_at && (
-                      <span>Completed {format(new Date(task.completed_at), 'MMM d, yyyy')}</span>
-                    )}
+                    
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                      {task.due_date && (
+                        <div className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          <span>{getDueDateDisplay(task.due_date)}</span>
+                        </div>
+                      )}
+                      <span>Created {format(new Date(task.created_at), 'MMM d, yyyy')}</span>
+                      {task.completed_at && (
+                        <span>Completed {format(new Date(task.completed_at), 'MMM d, yyyy')}</span>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <ScheduleButton
+                      item={{ ...task, type: 'task' }}
+                      onScheduled={handleScheduled}
+                      variant="outline"
+                      size="sm"
+                      className="text-primary"
+                    />
+                    <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                      <Edit2 className="w-4 h-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-muted-foreground hover:text-destructive"
+                      onClick={() => deleteTask(task.id)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
-                
-                <div className="flex items-center gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="text-primary"
-                    onClick={() => onScheduleTask?.(task)}
-                  >
-                    <Calendar className="w-4 h-4 mr-1" />
-                    Schedule
-                  </Button>
-                  <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
-                    <Edit2 className="w-4 h-4" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="text-muted-foreground hover:text-destructive"
-                    onClick={() => deleteTask(task.id)}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          ))}
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>

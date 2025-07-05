@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { ScheduleButton } from "@/components/today/ScheduleButton";
 
 interface Habit {
   id: string;
@@ -27,6 +28,7 @@ interface HabitsListProps {
 export const HabitsList = ({ onRefresh, onScheduleHabit }: HabitsListProps) => {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [loading, setLoading] = useState(true);
+  const [scheduledHabits, setScheduledHabits] = useState<Record<string, any[]>>({});
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -42,6 +44,9 @@ export const HabitsList = ({ onRefresh, onScheduleHabit }: HabitsListProps) => {
 
       if (error) throw error;
       setHabits(data || []);
+      
+      // Fetch scheduled habits
+      await fetchScheduledHabits(data || []);
     } catch (error) {
       console.error('Error fetching habits:', error);
       toast({
@@ -51,6 +56,32 @@ export const HabitsList = ({ onRefresh, onScheduleHabit }: HabitsListProps) => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchScheduledHabits = async (habitList: Habit[]) => {
+    if (!user || habitList.length === 0) return;
+    
+    try {
+      const habitIds = habitList.map(habit => habit.id);
+      const { data, error } = await supabase
+        .from('daily_plans')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('item_type', 'habit')
+        .in('item_id', habitIds);
+
+      if (error) throw error;
+      
+      const scheduledByHabit = data?.reduce((acc, plan) => {
+        if (!acc[plan.item_id]) acc[plan.item_id] = [];
+        acc[plan.item_id].push(plan);
+        return acc;
+      }, {} as Record<string, any[]>) || {};
+      
+      setScheduledHabits(scheduledByHabit);
+    } catch (error) {
+      console.error('Error fetching scheduled habits:', error);
     }
   };
 
@@ -106,6 +137,11 @@ export const HabitsList = ({ onRefresh, onScheduleHabit }: HabitsListProps) => {
     }
   };
 
+  const handleScheduled = () => {
+    fetchHabits();
+    onRefresh?.();
+  };
+
   useEffect(() => {
     fetchHabits();
   }, [user]);
@@ -126,66 +162,97 @@ export const HabitsList = ({ onRefresh, onScheduleHabit }: HabitsListProps) => {
 
   return (
     <div className="space-y-3">
-      {habits.map((habit) => (
-        <Card key={habit.id} className="p-4">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-2">
-                <h4 className="font-medium text-foreground">{habit.name}</h4>
-                <Badge variant={habit.frequency === 'daily' ? 'default' : 'secondary'}>
-                  {habit.frequency}
-                </Badge>
-                {habit.target_count > 1 && (
-                  <Badge variant="outline">{habit.target_count}x</Badge>
-                )}
-              </div>
-              
-              {habit.description && (
-                <p className="text-sm text-muted-foreground mb-3">{habit.description}</p>
-              )}
-              
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <Switch
-                    checked={habit.is_active}
-                    onCheckedChange={(checked) => toggleHabitActive(habit.id, checked)}
-                  />
-                  <span className="text-sm text-muted-foreground">
-                    {habit.is_active ? 'Active' : 'Inactive'}
-                  </span>
+      {habits.map((habit) => {
+        const habitSchedules = scheduledHabits[habit.id] || [];
+        
+        return (
+          <Card key={habit.id} className="p-4">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-2">
+                  <h4 className="font-medium text-foreground">{habit.name}</h4>
+                  <Badge variant={habit.frequency === 'daily' ? 'default' : 'secondary'}>
+                    {habit.frequency}
+                  </Badge>
+                  {habit.target_count > 1 && (
+                    <Badge variant="outline">{habit.target_count}x</Badge>
+                  )}
                 </div>
                 
-                <span className="text-xs text-muted-foreground">
-                  Created {format(new Date(habit.created_at), 'MMM d, yyyy')}
-                </span>
+                {habit.description && (
+                  <p className="text-sm text-muted-foreground mb-3">{habit.description}</p>
+                )}
+                
+                {/* Scheduled instances */}
+                {habitSchedules.length > 0 && (
+                  <div className="mb-3">
+                    <div className="text-xs text-muted-foreground mb-2">Scheduled for:</div>
+                    <div className="flex flex-wrap gap-2">
+                      {habitSchedules.map((schedule) => (
+                        <div key={schedule.id} className="flex items-center gap-2">
+                          <Badge variant="outline" className="text-xs">
+                            {format(new Date(schedule.plan_date), 'MMM d')}
+                            {schedule.scheduled_time && ` at ${schedule.scheduled_time}`}
+                          </Badge>
+                          <ScheduleButton
+                            item={{ ...habit, type: 'habit' }}
+                            onScheduled={handleScheduled}
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2 text-xs"
+                            existingPlanId={schedule.id}
+                            isRescheduling={true}
+                            initialDate={new Date(schedule.plan_date)}
+                            initialTime={schedule.scheduled_time}
+                            initialDuration={schedule.estimated_duration_minutes}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={habit.is_active}
+                      onCheckedChange={(checked) => toggleHabitActive(habit.id, checked)}
+                    />
+                    <span className="text-sm text-muted-foreground">
+                      {habit.is_active ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
+                  
+                  <span className="text-xs text-muted-foreground">
+                    Created {format(new Date(habit.created_at), 'MMM d, yyyy')}
+                  </span>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-2 ml-4">
+                <ScheduleButton
+                  item={{ ...habit, type: 'habit' }}
+                  onScheduled={handleScheduled}
+                  variant="outline"
+                  size="sm"
+                  className="text-primary"
+                />
+                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                  <Edit2 className="w-4 h-4" />
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-muted-foreground hover:text-destructive"
+                  onClick={() => deleteHabit(habit.id)}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
               </div>
             </div>
-            
-            <div className="flex items-center gap-2 ml-4">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="text-primary"
-                onClick={() => onScheduleHabit?.(habit)}
-              >
-                <Calendar className="w-4 h-4 mr-1" />
-                Schedule
-              </Button>
-              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
-                <Edit2 className="w-4 h-4" />
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="text-muted-foreground hover:text-destructive"
-                onClick={() => deleteHabit(habit.id)}
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-        </Card>
-      ))}
+          </Card>
+        );
+      })}
     </div>
   );
 };

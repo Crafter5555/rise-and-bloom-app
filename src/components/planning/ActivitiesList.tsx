@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { ScheduleButton } from "@/components/today/ScheduleButton";
 
 interface ActivityItem {
   id: string;
@@ -27,6 +28,7 @@ export const ActivitiesList = ({ onRefresh, onScheduleActivity }: ActivitiesList
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');
+  const [scheduledActivities, setScheduledActivities] = useState<Record<string, any[]>>({});
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -43,6 +45,9 @@ export const ActivitiesList = ({ onRefresh, onScheduleActivity }: ActivitiesList
 
       if (error) throw error;
       setActivities(data || []);
+      
+      // Fetch scheduled activities
+      await fetchScheduledActivities(data || []);
     } catch (error) {
       console.error('Error fetching activities:', error);
       toast({
@@ -52,6 +57,32 @@ export const ActivitiesList = ({ onRefresh, onScheduleActivity }: ActivitiesList
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchScheduledActivities = async (activityList: ActivityItem[]) => {
+    if (!user || activityList.length === 0) return;
+    
+    try {
+      const activityIds = activityList.map(activity => activity.id);
+      const { data, error } = await supabase
+        .from('daily_plans')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('item_type', 'activity')
+        .in('item_id', activityIds);
+
+      if (error) throw error;
+      
+      const scheduledByActivity = data?.reduce((acc, plan) => {
+        if (!acc[plan.item_id]) acc[plan.item_id] = [];
+        acc[plan.item_id].push(plan);
+        return acc;
+      }, {} as Record<string, any[]>) || {};
+      
+      setScheduledActivities(scheduledByActivity);
+    } catch (error) {
+      console.error('Error fetching scheduled activities:', error);
     }
   };
 
@@ -120,6 +151,11 @@ export const ActivitiesList = ({ onRefresh, onScheduleActivity }: ActivitiesList
     return colors[category as keyof typeof colors] || colors.general;
   };
 
+  const handleScheduled = () => {
+    fetchActivities();
+    onRefresh?.();
+  };
+
   const categories = ['all', 'fitness', 'learning', 'productivity', 'wellness', 'social', 'creative', 'general'];
   
   const filteredActivities = activities.filter(activity => 
@@ -163,66 +199,97 @@ export const ActivitiesList = ({ onRefresh, onScheduleActivity }: ActivitiesList
         </div>
       ) : (
         <div className="space-y-3">
-          {filteredActivities.map((activity) => (
-            <Card key={activity.id} className="p-4">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h4 className="font-medium text-foreground">{activity.name}</h4>
-                    <Badge className={getCategoryColor(activity.category)}>
-                      {activity.category}
-                    </Badge>
-                    {activity.is_favorite && (
-                      <Heart className="w-4 h-4 text-red-500 fill-current" />
-                    )}
-                  </div>
-                  
-                  {activity.description && (
-                    <p className="text-sm text-muted-foreground mb-3">{activity.description}</p>
-                  )}
-                  
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      <span>{activity.duration_minutes} minutes</span>
+          {filteredActivities.map((activity) => {
+            const activitySchedules = scheduledActivities[activity.id] || [];
+            
+            return (
+              <Card key={activity.id} className="p-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h4 className="font-medium text-foreground">{activity.name}</h4>
+                      <Badge className={getCategoryColor(activity.category)}>
+                        {activity.category}
+                      </Badge>
+                      {activity.is_favorite && (
+                        <Heart className="w-4 h-4 text-red-500 fill-current" />
+                      )}
                     </div>
-                    <span>Created {format(new Date(activity.created_at), 'MMM d, yyyy')}</span>
+                    
+                    {activity.description && (
+                      <p className="text-sm text-muted-foreground mb-3">{activity.description}</p>
+                    )}
+                    
+                    {/* Scheduled instances */}
+                    {activitySchedules.length > 0 && (
+                      <div className="mb-3">
+                        <div className="text-xs text-muted-foreground mb-2">Scheduled for:</div>
+                        <div className="flex flex-wrap gap-2">
+                          {activitySchedules.map((schedule) => (
+                            <div key={schedule.id} className="flex items-center gap-2">
+                              <Badge variant="outline" className="text-xs">
+                                {format(new Date(schedule.plan_date), 'MMM d')}
+                                {schedule.scheduled_time && ` at ${schedule.scheduled_time}`}
+                              </Badge>
+                              <ScheduleButton
+                                item={{ ...activity, type: 'activity' }}
+                                onScheduled={handleScheduled}
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 px-2 text-xs"
+                                existingPlanId={schedule.id}
+                                isRescheduling={true}
+                                initialDate={new Date(schedule.plan_date)}
+                                initialTime={schedule.scheduled_time}
+                                initialDuration={schedule.estimated_duration_minutes}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        <span>{activity.duration_minutes} minutes</span>
+                      </div>
+                      <span>Created {format(new Date(activity.created_at), 'MMM d, yyyy')}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 ml-4">
+                    <ScheduleButton
+                      item={{ ...activity, type: 'activity' }}
+                      onScheduled={handleScheduled}
+                      variant="outline"
+                      size="sm"
+                      className="text-primary"
+                    />
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className={`${activity.is_favorite ? 'text-red-500' : 'text-muted-foreground'} hover:text-red-500`}
+                      onClick={() => toggleFavorite(activity.id, !activity.is_favorite)}
+                    >
+                      <Heart className={`w-4 h-4 ${activity.is_favorite ? 'fill-current' : ''}`} />
+                    </Button>
+                    <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                      <Edit2 className="w-4 h-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-muted-foreground hover:text-destructive"
+                      onClick={() => deleteActivity(activity.id)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
-                
-                <div className="flex items-center gap-2 ml-4">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="text-primary"
-                    onClick={() => onScheduleActivity?.(activity)}
-                  >
-                    <Calendar className="w-4 h-4 mr-1" />
-                    Schedule
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className={`${activity.is_favorite ? 'text-red-500' : 'text-muted-foreground'} hover:text-red-500`}
-                    onClick={() => toggleFavorite(activity.id, !activity.is_favorite)}
-                  >
-                    <Heart className={`w-4 h-4 ${activity.is_favorite ? 'fill-current' : ''}`} />
-                  </Button>
-                  <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
-                    <Edit2 className="w-4 h-4" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="text-muted-foreground hover:text-destructive"
-                    onClick={() => deleteActivity(activity.id)}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          ))}
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>
