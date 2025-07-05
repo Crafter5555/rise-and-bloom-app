@@ -7,6 +7,7 @@ import { AIAssistantPanel } from "@/components/today/AIAssistantCard";
 import { EveningCheckIn } from "@/components/today/EveningCheckIn";
 import { AddToPlanSheet } from "@/components/today/AddToPlanSheet";
 import { QuizReminder } from "@/components/today/QuizReminder";
+import { QuoteOfTheDay } from "@/components/today/QuoteOfTheDay";
 import { MorningPlanningDialog } from "@/components/dialogs/MorningPlanningDialog";
 import { EveningReflectionDialog } from "@/components/dialogs/EveningReflectionDialog";
 import { useAuth } from "@/contexts/AuthContext";
@@ -84,6 +85,9 @@ const Today = () => {
           </Button>
         </div>
       </div>
+
+      {/* Quote of the Day */}
+      <QuoteOfTheDay />
 
       {/* Quiz Reminder */}
       {showQuizReminder && (
