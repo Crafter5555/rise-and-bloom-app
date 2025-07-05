@@ -180,6 +180,48 @@ export type Database = {
         }
         Relationships: []
       }
+      routine_schedules: {
+        Row: {
+          created_at: string
+          day_of_week: number
+          id: string
+          routine_id: string
+          time_of_day: string | null
+          workout_id: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: number
+          id?: string
+          routine_id: string
+          time_of_day?: string | null
+          workout_id: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: number
+          id?: string
+          routine_id?: string
+          time_of_day?: string | null
+          workout_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_routine_schedules_routine_id"
+            columns: ["routine_id"]
+            isOneToOne: false
+            referencedRelation: "workout_routines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_routine_schedules_workout_id"
+            columns: ["workout_id"]
+            isOneToOne: false
+            referencedRelation: "workouts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           completed: boolean | null
@@ -265,6 +307,7 @@ export type Database = {
           created_at: string
           id: string
           notes: string | null
+          routine_id: string | null
           scheduled_date: string
           updated_at: string
           user_id: string
@@ -276,6 +319,7 @@ export type Database = {
           created_at?: string
           id?: string
           notes?: string | null
+          routine_id?: string | null
           scheduled_date: string
           updated_at?: string
           user_id: string
@@ -287,10 +331,49 @@ export type Database = {
           created_at?: string
           id?: string
           notes?: string | null
+          routine_id?: string | null
           scheduled_date?: string
           updated_at?: string
           user_id?: string
           workout_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_workout_plans_routine_id"
+            columns: ["routine_id"]
+            isOneToOne: false
+            referencedRelation: "workout_routines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workout_routines: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -332,7 +415,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_routine_workout_plans: {
+        Args: {
+          target_user_id: string
+          start_date?: string
+          days_ahead?: number
+        }
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never

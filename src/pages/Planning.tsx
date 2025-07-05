@@ -9,11 +9,13 @@ import { AddGoalDialog } from "@/components/dialogs/AddGoalDialog";
 import { AddTaskDialog } from "@/components/dialogs/AddTaskDialog";
 import { AddActivityDialog } from "@/components/dialogs/AddActivityDialog";
 import { AddWorkoutDialog } from "@/components/dialogs/AddWorkoutDialog";
+import { AddRoutineDialog } from "@/components/dialogs/AddRoutineDialog";
 import { HabitsList } from "@/components/planning/HabitsList";
 import { GoalsList } from "@/components/planning/GoalsList";
 import { TasksList } from "@/components/planning/TasksList";
 import { ActivitiesList } from "@/components/planning/ActivitiesList";
 import { WorkoutsList } from "@/components/planning/WorkoutsList";
+import { WorkoutRoutinesList } from "@/components/planning/WorkoutRoutinesList";
 import { addDays, format, isToday, isTomorrow } from "date-fns";
 import { Calendar, Plus, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -30,6 +32,7 @@ const Planning = () => {
   const [showTaskDialog, setShowTaskDialog] = useState(false);
   const [showActivityDialog, setShowActivityDialog] = useState(false);
   const [showWorkoutDialog, setShowWorkoutDialog] = useState(false);
+  const [showRoutineDialog, setShowRoutineDialog] = useState(false);
   
   // Metrics state
   const [metrics, setMetrics] = useState({
@@ -179,13 +182,14 @@ const Planning = () => {
         <h3 className="text-lg font-semibold text-foreground mb-4">Planning Hub</h3>
         
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="habits">Habits</TabsTrigger>
             <TabsTrigger value="goals">Goals</TabsTrigger>
             <TabsTrigger value="tasks">Tasks</TabsTrigger>
             <TabsTrigger value="activities">Activities</TabsTrigger>
             <TabsTrigger value="workouts">Workouts</TabsTrigger>
+            <TabsTrigger value="routines">Routines</TabsTrigger>
           </TabsList>
           
           <TabsContent value="overview" className="mt-4">
@@ -247,8 +251,8 @@ const Planning = () => {
               </Card>
             </div>
             
-            {/* Workout Section */}
-            <div className="mb-4">
+            {/* Workout & Routines Section */}
+            <div className="grid grid-cols-2 gap-4 mb-4">
               <Card 
                 className="p-6 shadow-soft cursor-pointer hover:shadow-md transition-shadow"
                 onClick={() => setShowWorkoutDialog(true)}
@@ -259,6 +263,20 @@ const Planning = () => {
                   <p className="text-xs text-muted-foreground mb-2">Create workout routines</p>
                   <Button variant="ghost" size="sm" className="text-xs">
                     + Add Workout
+                  </Button>
+                </div>
+              </Card>
+              
+              <Card 
+                className="p-6 shadow-soft cursor-pointer hover:shadow-md transition-shadow"
+                onClick={() => setShowRoutineDialog(true)}
+              >
+                <div className="text-center">
+                  <div className="text-3xl mb-2">🔄</div>
+                  <h4 className="font-semibold text-foreground mb-1">Routines</h4>
+                  <p className="text-xs text-muted-foreground mb-2">Automate workout scheduling</p>
+                  <Button variant="ghost" size="sm" className="text-xs">
+                    + Create Routine
                   </Button>
                 </div>
               </Card>
@@ -318,6 +336,16 @@ const Planning = () => {
               </Button>
             </div>
             <WorkoutsList onRefresh={handleDataUpdate} />
+          </TabsContent>
+          <TabsContent value="routines" className="mt-4">
+            <div className="flex items-center justify-between mb-4">
+              <h4 className="text-lg font-semibold">Workout Routines</h4>
+              <Button onClick={() => setShowRoutineDialog(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Create Routine
+              </Button>
+            </div>
+            <WorkoutRoutinesList onRefresh={handleDataUpdate} />
           </TabsContent>
         </Tabs>
       </div>
@@ -428,6 +456,12 @@ const Planning = () => {
         open={showWorkoutDialog} 
         onOpenChange={setShowWorkoutDialog}
         onWorkoutAdded={handleDataUpdate}
+      />
+      
+      <AddRoutineDialog 
+        open={showRoutineDialog} 
+        onOpenChange={setShowRoutineDialog}
+        onRoutineAdded={handleDataUpdate}
       />
     </div>
   );
