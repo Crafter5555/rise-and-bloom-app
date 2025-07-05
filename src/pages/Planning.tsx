@@ -182,14 +182,13 @@ const Planning = () => {
         <h3 className="text-lg font-semibold text-foreground mb-4">Planning Hub</h3>
         
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="habits">Habits</TabsTrigger>
             <TabsTrigger value="goals">Goals</TabsTrigger>
             <TabsTrigger value="tasks">Tasks</TabsTrigger>
             <TabsTrigger value="activities">Activities</TabsTrigger>
             <TabsTrigger value="workouts">Workouts</TabsTrigger>
-            <TabsTrigger value="routines">Routines</TabsTrigger>
           </TabsList>
           
           <TabsContent value="overview" className="mt-4">
@@ -328,24 +327,34 @@ const Planning = () => {
           </TabsContent>
           
           <TabsContent value="workouts" className="mt-4">
-            <div className="flex items-center justify-between mb-4">
-              <h4 className="text-lg font-semibold">Your Workouts</h4>
-              <Button onClick={() => setShowWorkoutDialog(true)}>
-                <Plus className="w-4 h-4 mr-2" />
-                Add Workout
-              </Button>
+            <div className="space-y-6">
+              {/* Individual Workouts Section */}
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-lg font-semibold">Individual Workouts</h4>
+                  <Button onClick={() => setShowWorkoutDialog(true)}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Workout
+                  </Button>
+                </div>
+                <WorkoutsList onRefresh={handleDataUpdate} />
+              </div>
+              
+              {/* Workout Routines Section */}
+              <div className="border-t pt-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h4 className="text-lg font-semibold">Workout Routines</h4>
+                    <p className="text-sm text-muted-foreground">Automatically schedule workouts throughout the week</p>
+                  </div>
+                  <Button onClick={() => setShowRoutineDialog(true)} variant="outline">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Routine
+                  </Button>
+                </div>
+                <WorkoutRoutinesList onRefresh={handleDataUpdate} />
+              </div>
             </div>
-            <WorkoutsList onRefresh={handleDataUpdate} />
-          </TabsContent>
-          <TabsContent value="routines" className="mt-4">
-            <div className="flex items-center justify-between mb-4">
-              <h4 className="text-lg font-semibold">Workout Routines</h4>
-              <Button onClick={() => setShowRoutineDialog(true)}>
-                <Plus className="w-4 h-4 mr-2" />
-                Create Routine
-              </Button>
-            </div>
-            <WorkoutRoutinesList onRefresh={handleDataUpdate} />
           </TabsContent>
         </Tabs>
       </div>
