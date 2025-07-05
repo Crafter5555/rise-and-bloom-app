@@ -121,8 +121,56 @@ export const AddToPlanSheet = ({ open, onOpenChange, onPlanAdded }: AddToPlanShe
   };
 
   const handleAddTask = async () => {
-    if (taskTitle.trim()) {
-      await addToDailyPlan('custom', taskTitle.trim());
+    if (!taskTitle.trim() || !user) return;
+    
+    try {
+      setLoading(true);
+      
+      // First, create a real task in the tasks table
+      const { data: newTask, error: taskError } = await supabase
+        .from('tasks')
+        .insert({
+          user_id: user.id,
+          title: taskTitle.trim(),
+          priority: 'medium',
+          completed: false
+        })
+        .select()
+        .single();
+
+      if (taskError) throw taskError;
+
+      // Then add it to daily plans with the task ID
+      const { error: planError } = await supabase
+        .from('daily_plans')
+        .insert({
+          user_id: user.id,
+          plan_date: today,
+          item_type: 'task',
+          item_id: newTask.id,
+          title: taskTitle.trim(),
+          completed: false,
+          order_index: 0,
+          scheduled_time: scheduledTime || null,
+          estimated_duration_minutes: estimatedDuration
+        });
+
+      if (planError) throw planError;
+      
+      toast.success(`${taskTitle.trim()} added to today's plan!`);
+      onPlanAdded?.();
+      
+      // Reset form
+      setTaskTitle("");
+      setScheduledTime("");
+      setEstimatedDuration(30);
+      
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error adding task:', error);
+      toast.error('Failed to add task');
+    } finally {
+      setLoading(false);
     }
   };
 

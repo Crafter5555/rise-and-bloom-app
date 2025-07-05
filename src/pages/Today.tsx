@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, LogOut, Settings } from "lucide-react";
@@ -20,6 +21,7 @@ const Today = () => {
   const [isEvening, setIsEvening] = useState(false);
   const [morningQuizOpen, setMorningQuizOpen] = useState(false);
   const [eveningQuizOpen, setEveningQuizOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
   const [dailyQuote, setDailyQuote] = useState({
     text: "The way to get started is to quit talking and begin doing.",
     author: "Walt Disney"
@@ -106,6 +108,10 @@ const Today = () => {
     setShowQuizReminder(false);
   };
 
+  const handlePlanAdded = () => {
+    setRefreshKey(prev => prev + 1);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 pb-20 px-4 pt-6">
       {/* Personalized Greeting */}
@@ -168,7 +174,7 @@ const Today = () => {
       <InsightsPanel />
 
       {/* Today's Plan List */}
-      <DailyPlanList />
+      <DailyPlanList key={refreshKey} />
 
       {/* Add to Plan Button */}
       <Button
@@ -183,10 +189,7 @@ const Today = () => {
       <AddToPlanSheet 
         open={addToPlanOpen} 
         onOpenChange={setAddToPlanOpen}
-        onPlanAdded={() => {
-          // Refresh the daily plan list when items are added
-          window.location.reload();
-        }}
+        onPlanAdded={handlePlanAdded}
       />
 
       {/* Quiz Dialogs */}
