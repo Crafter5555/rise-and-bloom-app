@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
 import { EditTaskDialog } from "@/components/dialogs/EditTaskDialog";
 import { ScheduleButton } from "@/components/today/ScheduleButton";
+import { PlanEditModal } from "@/components/today/PlanEditModal";
 import { useToast } from "@/hooks/use-toast";
 
 interface DailyPlanItem {
@@ -33,6 +33,7 @@ export const DailyPlanList = () => {
   const [loading, setLoading] = useState(true);
   const [editingTask, setEditingTask] = useState<any>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showPlanEditModal, setShowPlanEditModal] = useState(false);
   const [cleaningUp, setCleaningUp] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -50,6 +51,12 @@ export const DailyPlanList = () => {
         .eq('plan_date', today);
 
       if (error) throw error;
+      
+      // Debug logging to see what we're getting
+      console.log('Fetched daily plans:', data);
+      data?.forEach(item => {
+        console.log(`Item: ${item.title}, scheduled_time: ${item.scheduled_time}, type: ${typeof item.scheduled_time}`);
+      });
       
       // Type cast the data to match our interface
       const typedData = (data || []).map(item => ({
@@ -284,18 +291,41 @@ export const DailyPlanList = () => {
     fetchDailyPlans();
   };
 
-  // Format time display
-  const formatTime = (timeString: string) => {
+  // Enhanced format time display with better debugging
+  const formatTime = (timeString: string | undefined | null) => {
+    console.log('formatTime called with:', timeString, typeof timeString);
+    
+    if (!timeString) {
+      console.log('No time string provided');
+      return null;
+    }
+    
     try {
-      const [hours, minutes] = timeString.split(':');
+      // Handle different time formats from database
+      let hours: number, minutes: number;
+      
+      if (timeString.includes(':')) {
+        const parts = timeString.split(':');
+        hours = parseInt(parts[0], 10);
+        minutes = parseInt(parts[1], 10);
+      } else {
+        console.log('Unexpected time format:', timeString);
+        return timeString;
+      }
+      
       const date = new Date();
-      date.setHours(parseInt(hours), parseInt(minutes));
-      return date.toLocaleTimeString([], { 
+      date.setHours(hours, minutes, 0, 0);
+      
+      const formatted = date.toLocaleTimeString([], { 
         hour: 'numeric', 
         minute: '2-digit',
         hour12: true 
       });
+      
+      console.log(`Formatted ${timeString} to ${formatted}`);
+      return formatted;
     } catch (error) {
+      console.error('Error formatting time:', error, 'for timeString:', timeString);
       return timeString;
     }
   };
@@ -346,121 +376,134 @@ export const DailyPlanList = () => {
   const goalItems = dailyPlans.filter(item => item.item_type === 'goal');
   const scheduleItems = dailyPlans.filter(item => item.item_type !== 'goal');
 
-  const renderItem = (item: DailyPlanItem) => (
-    <div
-      key={item.id}
-      className={cn(
-        "flex items-center gap-3 p-3 rounded-lg border transition-all",
-        item.completed 
-          ? "bg-muted/50 border-muted" 
-          : "bg-background border-border hover:border-primary/20",
-        item.item_type === 'task' && !item.completed && "cursor-pointer"
-      )}
-      onClick={() => handleTaskClick(item)}
-    >
-      <Button
-        variant="ghost"
-        size="sm"
+  const renderItem = (item: DailyPlanItem) => {
+    console.log(`Rendering item: ${item.title}, scheduled_time: ${item.scheduled_time}`);
+    
+    return (
+      <div
+        key={item.id}
         className={cn(
-          "w-6 h-6 rounded-full p-0 border-2",
-          item.completed
-            ? "bg-primary border-primary text-primary-foreground"
-            : "border-muted hover:border-primary"
+          "flex items-center gap-3 p-3 rounded-lg border transition-all",
+          item.completed 
+            ? "bg-muted/50 border-muted" 
+            : "bg-background border-border hover:border-primary/20",
+          item.item_type === 'task' && !item.completed && "cursor-pointer"
         )}
-        onClick={(e) => {
-          e.stopPropagation();
-          toggleComplete(item.id);
-        }}
+        onClick={() => handleTaskClick(item)}
       >
-        {item.completed && <Check className="w-3 h-3" />}
-      </Button>
-      
-      <div className="flex-1">
-        <div className={cn(
-          "font-medium",
-          item.completed ? "line-through text-muted-foreground" : "text-foreground"
-        )}>
-          {item.title}
-          {item.item_type === 'task' && !item.completed && (
-            <span className="text-xs text-muted-foreground ml-2">(click to edit)</span>
+        <Button
+          variant="ghost"
+          size="sm"
+          className={cn(
+            "w-6 h-6 rounded-full p-0 border-2",
+            item.completed
+              ? "bg-primary border-primary text-primary-foreground"
+              : "border-muted hover:border-primary"
           )}
-        </div>
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleComplete(item.id);
+          }}
+        >
+          {item.completed && <Check className="w-3 h-3" />}
+        </Button>
         
-        {item.description && (
-          <div className="text-sm text-muted-foreground mt-1">
-            {item.description}
-          </div>
-        )}
-        
-        {/* Time and Duration Info */}
-        {(item.scheduled_time || item.estimated_duration_minutes) && (
-          <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-            {item.scheduled_time && (
-              <div className="flex items-center gap-1 bg-primary/10 text-primary px-2 py-1 rounded">
-                <Clock className="w-3 h-3" />
-                <span className="font-medium">{formatTime(item.scheduled_time)}</span>
-              </div>
-            )}
-            {item.estimated_duration_minutes && (
-              <div className="flex items-center gap-1">
-                <span>
-                  {item.estimated_duration_minutes < 60 
-                    ? `${item.estimated_duration_minutes}min` 
-                    : `${Math.floor(item.estimated_duration_minutes / 60)}h ${item.estimated_duration_minutes % 60 > 0 ? `${item.estimated_duration_minutes % 60}m` : ''}`
-                  }
-                </span>
-              </div>
+        <div className="flex-1">
+          <div className={cn(
+            "font-medium",
+            item.completed ? "line-through text-muted-foreground" : "text-foreground"
+          )}>
+            {item.title}
+            {item.item_type === 'task' && !item.completed && (
+              <span className="text-xs text-muted-foreground ml-2">(click to edit)</span>
             )}
           </div>
-        )}
-        
-        <div className="flex items-center gap-2 mt-2">
-          <Badge 
-            variant="outline"
-            className="text-xs px-2 py-0 capitalize"
-          >
-            {item.item_type === 'custom' ? 'task' : item.item_type}
-          </Badge>
-          {item.priority && (
+          
+          {item.description && (
+            <div className="text-sm text-muted-foreground mt-1">
+              {item.description}
+            </div>
+          )}
+          
+          {/* Time and Duration Info */}
+          {(item.scheduled_time || item.estimated_duration_minutes) && (
+            <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+              {item.scheduled_time && (
+                <div className="flex items-center gap-1 bg-primary/10 text-primary px-2 py-1 rounded">
+                  <Clock className="w-3 h-3" />
+                  <span className="font-medium">{formatTime(item.scheduled_time)}</span>
+                </div>
+              )}
+              {item.estimated_duration_minutes && (
+                <div className="flex items-center gap-1">
+                  <span>
+                    {item.estimated_duration_minutes < 60 
+                      ? `${item.estimated_duration_minutes}min` 
+                      : `${Math.floor(item.estimated_duration_minutes / 60)}h ${item.estimated_duration_minutes % 60 > 0 ? `${item.estimated_duration_minutes % 60}m` : ''}`
+                    }
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+          
+          <div className="flex items-center gap-2 mt-2">
             <Badge 
-              variant={item.priority === "high" ? "destructive" : "secondary"}
-              className="text-xs px-2 py-0"
+              variant="outline"
+              className="text-xs px-2 py-0 capitalize"
             >
-              {item.priority}
+              {item.item_type === 'custom' ? 'task' : item.item_type}
             </Badge>
-          )}
+            {item.priority && (
+              <Badge 
+                variant={item.priority === "high" ? "destructive" : "secondary"}
+                className="text-xs px-2 py-0"
+              >
+                {item.priority}
+              </Badge>
+            )}
+          </div>
         </div>
-      </div>
 
-      {/* Edit Schedule Button */}
-      {!item.completed && item.item_id && (
-        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-          <ScheduleButton
-            item={{
-              id: item.item_id,
-              title: item.title,
-              type: item.item_type as any
-            }}
-            onScheduled={handleRescheduled}
-            variant="ghost"
-            size="sm"
-            className="text-muted-foreground hover:text-primary"
-            existingPlanId={item.id}
-            isRescheduling={true}
-            initialDate={new Date(item.plan_date)}
-            initialTime={item.scheduled_time}
-            initialDuration={item.estimated_duration_minutes}
-          />
-        </div>
-      )}
-    </div>
-  );
+        {/* Edit Schedule Button */}
+        {!item.completed && item.item_id && (
+          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+            <ScheduleButton
+              item={{
+                id: item.item_id,
+                title: item.title,
+                type: item.item_type as any
+              }}
+              onScheduled={handleRescheduled}
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground hover:text-primary"
+              existingPlanId={item.id}
+              isRescheduling={true}
+              initialDate={new Date(item.plan_date)}
+              initialTime={item.scheduled_time}
+              initialDuration={item.estimated_duration_minutes}
+            />
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <Card className="p-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-foreground">TODAY'S PLAN</h3>
         <div className="flex items-center gap-2">
+          <Button 
+            onClick={() => setShowPlanEditModal(true)}
+            variant="outline"
+            size="sm"
+            className="gap-2"
+          >
+            <Edit className="w-4 h-4" />
+            Edit Plan
+          </Button>
           <Button 
             onClick={cleanupOrphanedEntries} 
             disabled={cleaningUp}
@@ -523,6 +566,13 @@ export const DailyPlanList = () => {
         onOpenChange={setShowEditDialog}
         task={editingTask}
         onTaskUpdated={handleTaskUpdated}
+      />
+
+      {/* Plan Edit Modal */}
+      <PlanEditModal
+        open={showPlanEditModal}
+        onOpenChange={setShowPlanEditModal}
+        onPlanUpdated={fetchDailyPlans}
       />
     </Card>
   );
