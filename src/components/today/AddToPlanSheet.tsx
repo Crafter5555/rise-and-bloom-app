@@ -5,10 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { Clock } from "lucide-react";
 
 interface UserHabit {
   id: string;
@@ -41,6 +43,8 @@ interface AddToPlanSheetProps {
 export const AddToPlanSheet = ({ open, onOpenChange, onPlanAdded }: AddToPlanSheetProps) => {
   const [taskTitle, setTaskTitle] = useState("");
   const [workoutName, setWorkoutName] = useState("");
+  const [scheduledTime, setScheduledTime] = useState("");
+  const [estimatedDuration, setEstimatedDuration] = useState(30);
   const [userHabits, setUserHabits] = useState<UserHabit[]>([]);
   const [userActivities, setUserActivities] = useState<UserActivity[]>([]);
   const [userWorkouts, setUserWorkouts] = useState<UserWorkout[]>([]);
@@ -92,13 +96,21 @@ export const AddToPlanSheet = ({ open, onOpenChange, onPlanAdded }: AddToPlanShe
           item_id: itemId,
           title: title,
           completed: false,
-          order_index: 0
+          order_index: 0,
+          scheduled_time: scheduledTime || null,
+          estimated_duration_minutes: estimatedDuration
         });
 
       if (error) throw error;
       
       toast.success(`${title} added to today's plan!`);
       onPlanAdded?.();
+      
+      // Reset form
+      setTaskTitle("");
+      setScheduledTime("");
+      setEstimatedDuration(30);
+      
       onOpenChange(false);
     } catch (error) {
       console.error('Error adding to daily plan:', error);
@@ -111,7 +123,6 @@ export const AddToPlanSheet = ({ open, onOpenChange, onPlanAdded }: AddToPlanShe
   const handleAddTask = async () => {
     if (taskTitle.trim()) {
       await addToDailyPlan('custom', taskTitle.trim());
-      setTaskTitle("");
     }
   };
 
@@ -188,17 +199,54 @@ export const AddToPlanSheet = ({ open, onOpenChange, onPlanAdded }: AddToPlanShe
             )}
             
             {/* Custom Task Section */}
-            <div>
-              <Label htmlFor="task-title">
-                {userTasks.length > 0 ? "Create a new task" : "What do you need to do?"}
-              </Label>
-              <Input
-                id="task-title"
-                placeholder="e.g., Review presentation"
-                value={taskTitle}
-                onChange={(e) => setTaskTitle(e.target.value)}
-                className="mt-2"
-              />
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="task-title">
+                  {userTasks.length > 0 ? "Create a new task" : "What do you need to do?"}
+                </Label>
+                <Input
+                  id="task-title"
+                  placeholder="e.g., Review presentation"
+                  value={taskTitle}
+                  onChange={(e) => setTaskTitle(e.target.value)}
+                  className="mt-2"
+                />
+              </div>
+              
+              {/* Time and Duration Section */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="scheduled-time">
+                    <Clock className="w-4 h-4 inline mr-1" />
+                    Time (optional)
+                  </Label>
+                  <Input
+                    id="scheduled-time"
+                    type="time"
+                    value={scheduledTime}
+                    onChange={(e) => setScheduledTime(e.target.value)}
+                    className="mt-2"
+                  />
+                </div>
+                
+                <div>
+                  <Label>Duration</Label>
+                  <Select value={estimatedDuration.toString()} onValueChange={(value) => setEstimatedDuration(parseInt(value))}>
+                    <SelectTrigger className="mt-2">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="15">15 minutes</SelectItem>
+                      <SelectItem value="30">30 minutes</SelectItem>
+                      <SelectItem value="45">45 minutes</SelectItem>
+                      <SelectItem value="60">1 hour</SelectItem>
+                      <SelectItem value="90">1.5 hours</SelectItem>
+                      <SelectItem value="120">2 hours</SelectItem>
+                      <SelectItem value="180">3 hours</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </div>
             <Button onClick={handleAddTask} className="w-full" disabled={!taskTitle.trim() || loading}>
               Add New Task

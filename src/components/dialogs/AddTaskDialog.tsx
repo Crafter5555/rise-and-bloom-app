@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -26,6 +26,9 @@ export const AddTaskDialog = ({ open, onOpenChange, onTaskAdded, defaultDate }: 
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState("medium");
   const [dueDate, setDueDate] = useState<Date | undefined>(defaultDate);
+  const [scheduledTime, setScheduledTime] = useState("");
+  const [estimatedDuration, setEstimatedDuration] = useState(30);
+  const [addToDailyPlan, setAddToDailyPlan] = useState(false);
   const [loading, setLoading] = useState(false);
   
   const { user } = useAuth();
@@ -37,7 +40,8 @@ export const AddTaskDialog = ({ open, onOpenChange, onTaskAdded, defaultDate }: 
     setLoading(true);
     
     try {
-      const { error } = await supabase
+      // Create the task first
+      const { data: taskData, error: taskError } = await supabase
         .from('tasks')
         .insert({
           user_id: user.id,
@@ -45,13 +49,33 @@ export const AddTaskDialog = ({ open, onOpenChange, onTaskAdded, defaultDate }: 
           description: description.trim() || null,
           priority,
           due_date: dueDate ? format(dueDate, 'yyyy-MM-dd') : null
-        });
+        })
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (taskError) throw taskError;
+
+      // If user wants to add to daily plan, create daily plan entry
+      if (addToDailyPlan && taskData) {
+        const today = format(new Date(), 'yyyy-MM-dd');
+        await supabase
+          .from('daily_plans')
+          .insert({
+            user_id: user.id,
+            plan_date: today,
+            item_type: 'task',
+            item_id: taskData.id,
+            title: title.trim(),
+            scheduled_time: scheduledTime || null,
+            estimated_duration_minutes: estimatedDuration
+          });
+      }
 
       toast({
         title: "Success",
-        description: "Task created successfully!"
+        description: addToDailyPlan 
+          ? "Task created and added to today's plan!"
+          : "Task created successfully!"
       });
 
       // Reset form
@@ -59,6 +83,9 @@ export const AddTaskDialog = ({ open, onOpenChange, onTaskAdded, defaultDate }: 
       setDescription("");
       setPriority("medium");
       setDueDate(defaultDate);
+      setScheduledTime("");
+      setEstimatedDuration(30);
+      setAddToDailyPlan(false);
       
       onTaskAdded?.();
       onOpenChange(false);
@@ -144,6 +171,58 @@ export const AddTaskDialog = ({ open, onOpenChange, onTaskAdded, defaultDate }: 
                 </PopoverContent>
               </Popover>
             </div>
+          </div>
+
+          {/* Add to Daily Plan Section */}
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="add-to-plan"
+                checked={addToDailyPlan}
+                onChange={(e) => setAddToDailyPlan(e.target.checked)}
+                className="w-4 h-4 rounded border border-input"
+              />
+              <Label htmlFor="add-to-plan" className="text-sm font-medium">
+                Add to today's plan
+              </Label>
+            </div>
+
+            {addToDailyPlan && (
+              <div className="grid grid-cols-2 gap-4 pl-6">
+                <div>
+                  <Label htmlFor="scheduled-time">
+                    <Clock className="w-4 h-4 inline mr-1" />
+                    Time (optional)
+                  </Label>
+                  <Input
+                    id="scheduled-time"
+                    type="time"
+                    value={scheduledTime}
+                    onChange={(e) => setScheduledTime(e.target.value)}
+                    className="mt-2"
+                  />
+                </div>
+                
+                <div>
+                  <Label>Duration</Label>
+                  <Select value={estimatedDuration.toString()} onValueChange={(value) => setEstimatedDuration(parseInt(value))}>
+                    <SelectTrigger className="mt-2">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="15">15 minutes</SelectItem>
+                      <SelectItem value="30">30 minutes</SelectItem>
+                      <SelectItem value="45">45 minutes</SelectItem>
+                      <SelectItem value="60">1 hour</SelectItem>
+                      <SelectItem value="90">1.5 hours</SelectItem>
+                      <SelectItem value="120">2 hours</SelectItem>
+                      <SelectItem value="180">3 hours</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

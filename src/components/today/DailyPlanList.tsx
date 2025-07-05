@@ -18,6 +18,9 @@ interface DailyPlanItem {
   completed_at?: string;
   order_index: number;
   priority?: "low" | "medium" | "high";
+  scheduled_time?: string;
+  estimated_duration_minutes?: number;
+  actual_duration_minutes?: number;
 }
 
 export const DailyPlanList = () => {
@@ -35,8 +38,7 @@ export const DailyPlanList = () => {
         .from('daily_plans')
         .select('*')
         .eq('user_id', user.id)
-        .eq('plan_date', today)
-        .order('order_index', { ascending: true });
+        .eq('plan_date', today);
 
       if (error) throw error;
       
@@ -46,7 +48,20 @@ export const DailyPlanList = () => {
         item_type: item.item_type as DailyPlanItem['item_type']
       }));
       
-      setDailyPlans(typedData);
+      // Sort by scheduled time, then by order index
+      const sortedData = typedData.sort((a, b) => {
+        // Items with scheduled time come first, sorted by time
+        if (a.scheduled_time && b.scheduled_time) {
+          return a.scheduled_time.localeCompare(b.scheduled_time);
+        }
+        if (a.scheduled_time && !b.scheduled_time) return -1;
+        if (!a.scheduled_time && b.scheduled_time) return 1;
+        
+        // If both have no scheduled time, sort by order_index
+        return (a.order_index || 0) - (b.order_index || 0);
+      });
+      
+      setDailyPlans(sortedData);
     } catch (error) {
       console.error('Error fetching daily plans:', error);
     } finally {
@@ -209,6 +224,30 @@ export const DailyPlanList = () => {
           </div>
         )}
         
+        {/* Time and Duration Info */}
+        {(item.scheduled_time || item.estimated_duration_minutes) && (
+          <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+            {item.scheduled_time && (
+              <span className="flex items-center gap-1">
+                <Clock className="w-3 h-3" />
+                {new Date(`2000-01-01T${item.scheduled_time}`).toLocaleTimeString([], { 
+                  hour: 'numeric', 
+                  minute: '2-digit',
+                  hour12: true 
+                })}
+              </span>
+            )}
+            {item.estimated_duration_minutes && (
+              <span>
+                ~{item.estimated_duration_minutes < 60 
+                  ? `${item.estimated_duration_minutes}m` 
+                  : `${Math.floor(item.estimated_duration_minutes / 60)}h ${item.estimated_duration_minutes % 60 > 0 ? `${item.estimated_duration_minutes % 60}m` : ''}`
+                }
+              </span>
+            )}
+          </div>
+        )}
+        
         <div className="flex items-center gap-2 mt-1">
           <Badge 
             variant="outline"
@@ -233,9 +272,17 @@ export const DailyPlanList = () => {
     <Card className="p-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-foreground">TODAY'S PLAN</h3>
-        <span className="text-sm text-primary font-medium">
-          {Math.round((completedCount / totalCount) * 100)}%
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-primary font-medium">
+            {Math.round((completedCount / totalCount) * 100)}%
+          </span>
+          {/* Total estimated time */}
+          {dailyPlans.some(item => item.estimated_duration_minutes) && (
+            <span className="text-xs text-muted-foreground">
+              {Math.floor(dailyPlans.reduce((total, item) => total + (item.estimated_duration_minutes || 0), 0) / 60)}h {dailyPlans.reduce((total, item) => total + (item.estimated_duration_minutes || 0), 0) % 60}m planned
+            </span>
+          )}
+        </div>
       </div>
       
       <div className="text-sm text-muted-foreground mb-6">

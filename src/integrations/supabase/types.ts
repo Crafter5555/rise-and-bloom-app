@@ -47,43 +47,52 @@ export type Database = {
       }
       daily_plans: {
         Row: {
+          actual_duration_minutes: number | null
           completed: boolean
           completed_at: string | null
           created_at: string
           description: string | null
+          estimated_duration_minutes: number | null
           id: string
           item_id: string | null
           item_type: string
           order_index: number | null
           plan_date: string
+          scheduled_time: string | null
           title: string
           updated_at: string
           user_id: string
         }
         Insert: {
+          actual_duration_minutes?: number | null
           completed?: boolean
           completed_at?: string | null
           created_at?: string
           description?: string | null
+          estimated_duration_minutes?: number | null
           id?: string
           item_id?: string | null
           item_type: string
           order_index?: number | null
           plan_date: string
+          scheduled_time?: string | null
           title: string
           updated_at?: string
           user_id: string
         }
         Update: {
+          actual_duration_minutes?: number | null
           completed?: boolean
           completed_at?: string | null
           created_at?: string
           description?: string | null
+          estimated_duration_minutes?: number | null
           id?: string
           item_id?: string | null
           item_type?: string
           order_index?: number | null
           plan_date?: string
+          scheduled_time?: string | null
           title?: string
           updated_at?: string
           user_id?: string
