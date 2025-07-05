@@ -26,12 +26,12 @@ export const MetricCard = ({
   };
 
   return (
-    <Card className={cn("p-4 text-center space-y-2", className)}>
-      {icon && <div className="text-2xl">{icon}</div>}
-      <div className={cn("text-2xl font-bold", colorClasses[color])}>
+    <Card className={cn("p-3 text-center space-y-1", className)}>
+      {icon && <div className="text-xl">{icon}</div>}
+      <div className={cn("text-xl font-bold", colorClasses[color])}>
         {value}
       </div>
-      <div className="text-sm font-medium text-foreground">
+      <div className="text-xs font-medium text-foreground">
         {title}
       </div>
       {subtitle && (
