@@ -1,14 +1,16 @@
+
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, Clock, Target, Calendar } from "lucide-react";
+import { Check, Clock, Target, Calendar, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
 import { EditTaskDialog } from "@/components/dialogs/EditTaskDialog";
 import { ScheduleButton } from "@/components/today/ScheduleButton";
+import { useToast } from "@/hooks/use-toast";
 
 interface DailyPlanItem {
   id: string;
@@ -31,7 +33,9 @@ export const DailyPlanList = () => {
   const [loading, setLoading] = useState(true);
   const [editingTask, setEditingTask] = useState<any>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [cleaningUp, setCleaningUp] = useState(false);
   const { user } = useAuth();
+  const { toast } = useToast();
   const today = format(new Date(), 'yyyy-MM-dd');
 
   // Fetch daily plans for today
@@ -71,6 +75,101 @@ export const DailyPlanList = () => {
       console.error('Error fetching daily plans:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Clean up orphaned daily plan entries
+  const cleanupOrphanedEntries = async () => {
+    if (!user) return;
+    
+    setCleaningUp(true);
+    try {
+      // Get all daily plans with item_id
+      const { data: plans, error: plansError } = await supabase
+        .from('daily_plans')
+        .select('*')
+        .eq('user_id', user.id)
+        .not('item_id', 'is', null);
+
+      if (plansError) throw plansError;
+
+      const orphanedIds: string[] = [];
+
+      // Check each plan to see if its source item still exists
+      for (const plan of plans || []) {
+        let exists = false;
+        
+        switch (plan.item_type) {
+          case 'task':
+            const { data: task } = await supabase
+              .from('tasks')
+              .select('id')
+              .eq('id', plan.item_id)
+              .single();
+            exists = !!task;
+            break;
+          case 'habit':
+            const { data: habit } = await supabase
+              .from('habits')
+              .select('id')
+              .eq('id', plan.item_id)
+              .single();
+            exists = !!habit;
+            break;
+          case 'activity':
+            const { data: activity } = await supabase
+              .from('activities')
+              .select('id')
+              .eq('id', plan.item_id)
+              .single();
+            exists = !!activity;
+            break;
+          case 'workout':
+            const { data: workout } = await supabase
+              .from('workouts')
+              .select('id')
+              .eq('id', plan.item_id)
+              .single();
+            exists = !!workout;
+            break;
+        }
+
+        if (!exists) {
+          orphanedIds.push(plan.id);
+        }
+      }
+
+      // Remove orphaned entries
+      if (orphanedIds.length > 0) {
+        const { error: deleteError } = await supabase
+          .from('daily_plans')
+          .delete()
+          .in('id', orphanedIds);
+
+        if (deleteError) throw deleteError;
+
+        toast({
+          title: "Cleanup Complete",
+          description: `Removed ${orphanedIds.length} orphaned entries from your daily plan`
+        });
+
+        // Refresh the list
+        fetchDailyPlans();
+      } else {
+        toast({
+          title: "No Cleanup Needed",
+          description: "Your daily plan is already up to date"
+        });
+      }
+    } catch (error) {
+      console.error('Error cleaning up orphaned entries:', error);
+      toast({
+        title: "Cleanup Failed",
+        description: "Failed to clean up orphaned entries",
+        variant: "destructive"
+      });
+    } finally {
+      setCleaningUp(false);
     }
   };
 
@@ -213,6 +312,16 @@ export const DailyPlanList = () => {
           <p className="text-sm text-muted-foreground mb-4">
             Start by adding some items to your daily plan
           </p>
+          <Button 
+            onClick={cleanupOrphanedEntries} 
+            disabled={cleaningUp}
+            variant="outline"
+            size="sm"
+            className="gap-2"
+          >
+            <RefreshCw className={cn("w-4 h-4", cleaningUp && "animate-spin")} />
+            Clean up orphaned entries
+          </Button>
         </div>
       </Card>
     );
@@ -337,6 +446,16 @@ export const DailyPlanList = () => {
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-foreground">TODAY'S PLAN</h3>
         <div className="flex items-center gap-2">
+          <Button 
+            onClick={cleanupOrphanedEntries} 
+            disabled={cleaningUp}
+            variant="ghost"
+            size="sm"
+            className="gap-2 text-xs"
+          >
+            <RefreshCw className={cn("w-3 h-3", cleaningUp && "animate-spin")} />
+            Cleanup
+          </Button>
           <span className="text-sm text-primary font-medium">
             {Math.round((completedCount / totalCount) * 100)}%
           </span>

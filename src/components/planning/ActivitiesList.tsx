@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,16 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ScheduleButton } from "@/components/today/ScheduleButton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface ActivityItem {
   id: string;
@@ -29,6 +40,8 @@ export const ActivitiesList = ({ onRefresh, onScheduleActivity }: ActivitiesList
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');
   const [scheduledActivities, setScheduledActivities] = useState<Record<string, any[]>>({});
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [activityToDelete, setActivityToDelete] = useState<{ activity: ActivityItem; scheduledDates: string[] } | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -112,21 +125,41 @@ export const ActivitiesList = ({ onRefresh, onScheduleActivity }: ActivitiesList
     }
   };
 
-  const deleteActivity = async (activityId: string) => {
+  const handleDeleteActivity = (activity: ActivityItem) => {
+    const scheduledDates = scheduledActivities[activity.id]?.map(plan => 
+      format(new Date(plan.plan_date), 'MMM d, yyyy')
+    ) || [];
+    
+    setActivityToDelete({ activity, scheduledDates });
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteActivity = async () => {
+    if (!activityToDelete) return;
+
     try {
+      // Delete the activity - triggers will automatically clean up daily_plans
       const { error } = await supabase
         .from('activities')
         .delete()
-        .eq('id', activityId);
+        .eq('id', activityToDelete.activity.id);
 
       if (error) throw error;
 
-      setActivities(prev => prev.filter(activity => activity.id !== activityId));
+      setActivities(prev => prev.filter(activity => activity.id !== activityToDelete.activity.id));
+      setScheduledActivities(prev => {
+        const updated = { ...prev };
+        delete updated[activityToDelete.activity.id];
+        return updated;
+      });
+      
       onRefresh?.();
 
       toast({
         title: "Success",
-        description: "Activity deleted successfully"
+        description: activityToDelete.scheduledDates.length > 0 
+          ? `Activity deleted and removed from ${activityToDelete.scheduledDates.length} scheduled day(s)`
+          : "Activity deleted successfully"
       });
     } catch (error) {
       console.error('Error deleting activity:', error);
@@ -135,6 +168,9 @@ export const ActivitiesList = ({ onRefresh, onScheduleActivity }: ActivitiesList
         description: "Failed to delete activity",
         variant: "destructive"
       });
+    } finally {
+      setDeleteDialogOpen(false);
+      setActivityToDelete(null);
     }
   };
 
@@ -171,127 +207,162 @@ export const ActivitiesList = ({ onRefresh, onScheduleActivity }: ActivitiesList
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap gap-2">
-        {categories.map(category => (
-          <Button
-            key={category}
-            variant={filter === category ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setFilter(category)}
-            className="capitalize"
-          >
-            {category} 
-            {category !== 'all' && (
-              <span className="ml-1">
-                ({activities.filter(a => a.category === category).length})
-              </span>
-            )}
-          </Button>
-        ))}
+    <>
+      <div className="space-y-4">
+        <div className="flex flex-wrap gap-2">
+          {categories.map(category => (
+            <Button
+              key={category}
+              variant={filter === category ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setFilter(category)}
+              className="capitalize"
+            >
+              {category} 
+              {category !== 'all' && (
+                <span className="ml-1">
+                  ({activities.filter(a => a.category === category).length})
+                </span>
+              )}
+            </Button>
+          ))}
+        </div>
+
+        {filteredActivities.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <Activity className="w-12 h-12 mx-auto mb-3 opacity-50" />
+            <p>No {filter === 'all' ? '' : filter} activities found</p>
+            <p className="text-sm">Create your first activity to get started</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {filteredActivities.map((activity) => {
+              const activitySchedules = scheduledActivities[activity.id] || [];
+              
+              return (
+                <Card key={activity.id} className="p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h4 className="font-medium text-foreground">{activity.name}</h4>
+                        <Badge className={getCategoryColor(activity.category)}>
+                          {activity.category}
+                        </Badge>
+                        {activity.is_favorite && (
+                          <Heart className="w-4 h-4 text-red-500 fill-current" />
+                        )}
+                      </div>
+                      
+                      {activity.description && (
+                        <p className="text-sm text-muted-foreground mb-3">{activity.description}</p>
+                      )}
+                      
+                      {/* Scheduled instances */}
+                      {activitySchedules.length > 0 && (
+                        <div className="mb-3">
+                          <div className="text-xs text-muted-foreground mb-2">Scheduled for:</div>
+                          <div className="flex flex-wrap gap-2">
+                            {activitySchedules.map((schedule) => (
+                              <div key={schedule.id} className="flex items-center gap-2">
+                                <Badge variant="outline" className="text-xs">
+                                  {format(new Date(schedule.plan_date), 'MMM d')}
+                                  {schedule.scheduled_time && ` at ${schedule.scheduled_time}`}
+                                </Badge>
+                                <ScheduleButton
+                                  item={{ ...activity, type: 'activity' }}
+                                  onScheduled={handleScheduled}
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 px-2 text-xs"
+                                  existingPlanId={schedule.id}
+                                  isRescheduling={true}
+                                  initialDate={new Date(schedule.plan_date)}
+                                  initialTime={schedule.scheduled_time}
+                                  initialDuration={schedule.estimated_duration_minutes}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          <span>{activity.duration_minutes} minutes</span>
+                        </div>
+                        <span>Created {format(new Date(activity.created_at), 'MMM d, yyyy')}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 ml-4">
+                      <ScheduleButton
+                        item={{ ...activity, type: 'activity' }}
+                        onScheduled={handleScheduled}
+                        variant="outline"
+                        size="sm"
+                        className="text-primary"
+                      />
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className={`${activity.is_favorite ? 'text-red-500' : 'text-muted-foreground'} hover:text-red-500`}
+                        onClick={() => toggleFavorite(activity.id, !activity.is_favorite)}
+                      >
+                        <Heart className={`w-4 h-4 ${activity.is_favorite ? 'fill-current' : ''}`} />
+                      </Button>
+                      <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                        <Edit2 className="w-4 h-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-muted-foreground hover:text-destructive"
+                        onClick={() => handleDeleteActivity(activity)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        )}
       </div>
 
-      {filteredActivities.length === 0 ? (
-        <div className="text-center py-8 text-muted-foreground">
-          <Activity className="w-12 h-12 mx-auto mb-3 opacity-50" />
-          <p>No {filter === 'all' ? '' : filter} activities found</p>
-          <p className="text-sm">Create your first activity to get started</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {filteredActivities.map((activity) => {
-            const activitySchedules = scheduledActivities[activity.id] || [];
-            
-            return (
-              <Card key={activity.id} className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h4 className="font-medium text-foreground">{activity.name}</h4>
-                      <Badge className={getCategoryColor(activity.category)}>
-                        {activity.category}
-                      </Badge>
-                      {activity.is_favorite && (
-                        <Heart className="w-4 h-4 text-red-500 fill-current" />
-                      )}
-                    </div>
-                    
-                    {activity.description && (
-                      <p className="text-sm text-muted-foreground mb-3">{activity.description}</p>
-                    )}
-                    
-                    {/* Scheduled instances */}
-                    {activitySchedules.length > 0 && (
-                      <div className="mb-3">
-                        <div className="text-xs text-muted-foreground mb-2">Scheduled for:</div>
-                        <div className="flex flex-wrap gap-2">
-                          {activitySchedules.map((schedule) => (
-                            <div key={schedule.id} className="flex items-center gap-2">
-                              <Badge variant="outline" className="text-xs">
-                                {format(new Date(schedule.plan_date), 'MMM d')}
-                                {schedule.scheduled_time && ` at ${schedule.scheduled_time}`}
-                              </Badge>
-                              <ScheduleButton
-                                item={{ ...activity, type: 'activity' }}
-                                onScheduled={handleScheduled}
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 px-2 text-xs"
-                                existingPlanId={schedule.id}
-                                isRescheduling={true}
-                                initialDate={new Date(schedule.plan_date)}
-                                initialTime={schedule.scheduled_time}
-                                initialDuration={schedule.estimated_duration_minutes}
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        <span>{activity.duration_minutes} minutes</span>
-                      </div>
-                      <span>Created {format(new Date(activity.created_at), 'MMM d, yyyy')}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-2 ml-4">
-                    <ScheduleButton
-                      item={{ ...activity, type: 'activity' }}
-                      onScheduled={handleScheduled}
-                      variant="outline"
-                      size="sm"
-                      className="text-primary"
-                    />
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className={`${activity.is_favorite ? 'text-red-500' : 'text-muted-foreground'} hover:text-red-500`}
-                      onClick={() => toggleFavorite(activity.id, !activity.is_favorite)}
-                    >
-                      <Heart className={`w-4 h-4 ${activity.is_favorite ? 'fill-current' : ''}`} />
-                    </Button>
-                    <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
-                      <Edit2 className="w-4 h-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="text-muted-foreground hover:text-destructive"
-                      onClick={() => deleteActivity(activity.id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            );
-          })}
-        </div>
-      )}
-    </div>
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Activity</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{activityToDelete?.activity.name}"?
+              {activityToDelete?.scheduledDates && activityToDelete.scheduledDates.length > 0 && (
+                <>
+                  <br /><br />
+                  <strong>This activity is scheduled for:</strong>
+                  <ul className="list-disc list-inside mt-2">
+                    {activityToDelete.scheduledDates.map((date, index) => (
+                      <li key={index}>{date}</li>
+                    ))}
+                  </ul>
+                  <br />
+                  Deleting this activity will also remove it from all scheduled days.
+                </>
+              )}
+              <br /><br />
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteActivity} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete Activity
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };

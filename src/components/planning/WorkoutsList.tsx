@@ -9,6 +9,16 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ScheduleButton } from "@/components/today/ScheduleButton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Workout {
   id: string;
@@ -28,6 +38,8 @@ export const WorkoutsList = ({ onRefresh, onScheduleWorkout }: WorkoutsListProps
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [loading, setLoading] = useState(true);
   const [scheduledWorkouts, setScheduledWorkouts] = useState<Record<string, any[]>>({});
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [workoutToDelete, setWorkoutToDelete] = useState<{ workout: Workout; scheduledDates: string[] } | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -84,21 +96,41 @@ export const WorkoutsList = ({ onRefresh, onScheduleWorkout }: WorkoutsListProps
     }
   };
 
-  const deleteWorkout = async (workoutId: string) => {
+  const handleDeleteWorkout = (workout: Workout) => {
+    const scheduledDates = scheduledWorkouts[workout.id]?.map(plan => 
+      format(new Date(plan.plan_date), 'MMM d, yyyy')
+    ) || [];
+    
+    setWorkoutToDelete({ workout, scheduledDates });
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteWorkout = async () => {
+    if (!workoutToDelete) return;
+
     try {
+      // Delete the workout - triggers will automatically clean up daily_plans
       const { error } = await supabase
         .from('workouts')
         .delete()
-        .eq('id', workoutId);
+        .eq('id', workoutToDelete.workout.id);
 
       if (error) throw error;
 
-      setWorkouts(prev => prev.filter(workout => workout.id !== workoutId));
+      setWorkouts(prev => prev.filter(workout => workout.id !== workoutToDelete.workout.id));
+      setScheduledWorkouts(prev => {
+        const updated = { ...prev };
+        delete updated[workoutToDelete.workout.id];
+        return updated;
+      });
+      
       onRefresh?.();
 
       toast({
         title: "Success",
-        description: "Workout deleted successfully"
+        description: workoutToDelete.scheduledDates.length > 0 
+          ? `Workout deleted and removed from ${workoutToDelete.scheduledDates.length} scheduled day(s)`
+          : "Workout deleted successfully"
       });
     } catch (error) {
       console.error('Error deleting workout:', error);
@@ -107,6 +139,9 @@ export const WorkoutsList = ({ onRefresh, onScheduleWorkout }: WorkoutsListProps
         description: "Failed to delete workout",
         variant: "destructive"
       });
+    } finally {
+      setDeleteDialogOpen(false);
+      setWorkoutToDelete(null);
     }
   };
 
@@ -143,98 +178,133 @@ export const WorkoutsList = ({ onRefresh, onScheduleWorkout }: WorkoutsListProps
   }
 
   return (
-    <div className="space-y-3">
-      {workouts.map((workout) => {
-        const workoutSchedules = scheduledWorkouts[workout.id] || [];
-        
-        return (
-          <Card key={workout.id} className="p-4">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  <h4 className="font-medium text-foreground">{workout.name}</h4>
-                  <Badge className={getDifficultyColor(workout.difficulty_level)}>
-                    {workout.difficulty_level}
-                  </Badge>
-                </div>
-                
-                {workout.description && (
-                  <p className="text-sm text-muted-foreground mb-3">{workout.description}</p>
-                )}
-                
-                {/* Scheduled instances */}
-                {workoutSchedules.length > 0 && (
-                  <div className="mb-3">
-                    <div className="text-xs text-muted-foreground mb-2">Scheduled for:</div>
-                    <div className="flex flex-wrap gap-2">
-                      {workoutSchedules.map((schedule) => (
-                        <div key={schedule.id} className="flex items-center gap-2">
-                          <Badge variant="outline" className="text-xs">
-                            {format(new Date(schedule.plan_date), 'MMM d')}
-                            {schedule.scheduled_time && ` at ${schedule.scheduled_time}`}
-                          </Badge>
-                          <ScheduleButton
-                            item={{ ...workout, type: 'workout' }}
-                            onScheduled={handleScheduled}
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 px-2 text-xs"
-                            existingPlanId={schedule.id}
-                            isRescheduling={true}
-                            initialDate={new Date(schedule.plan_date)}
-                            initialTime={schedule.scheduled_time}
-                            initialDuration={schedule.estimated_duration_minutes}
-                          />
-                        </div>
-                      ))}
-                    </div>
+    <>
+      <div className="space-y-3">
+        {workouts.map((workout) => {
+          const workoutSchedules = scheduledWorkouts[workout.id] || [];
+          
+          return (
+            <Card key={workout.id} className="p-4">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <h4 className="font-medium text-foreground">{workout.name}</h4>
+                    <Badge className={getDifficultyColor(workout.difficulty_level)}>
+                      {workout.difficulty_level}
+                    </Badge>
                   </div>
-                )}
-                
-                <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                  {workout.total_duration_minutes > 0 && (
-                    <div className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      <span>{workout.total_duration_minutes} minutes</span>
+                  
+                  {workout.description && (
+                    <p className="text-sm text-muted-foreground mb-3">{workout.description}</p>
+                  )}
+                  
+                  {/* Scheduled instances */}
+                  {workoutSchedules.length > 0 && (
+                    <div className="mb-3">
+                      <div className="text-xs text-muted-foreground mb-2">Scheduled for:</div>
+                      <div className="flex flex-wrap gap-2">
+                        {workoutSchedules.map((schedule) => (
+                          <div key={schedule.id} className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-xs">
+                              {format(new Date(schedule.plan_date), 'MMM d')}
+                              {schedule.scheduled_time && ` at ${schedule.scheduled_time}`}
+                            </Badge>
+                            <ScheduleButton
+                              item={{ ...workout, type: 'workout' }}
+                              onScheduled={handleScheduled}
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 px-2 text-xs"
+                              existingPlanId={schedule.id}
+                              isRescheduling={true}
+                              initialDate={new Date(schedule.plan_date)}
+                              initialTime={schedule.scheduled_time}
+                              initialDuration={schedule.estimated_duration_minutes}
+                            />
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
-                  <span>Created {format(new Date(workout.created_at), 'MMM d, yyyy')}</span>
+                  
+                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                    {workout.total_duration_minutes > 0 && (
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        <span>{workout.total_duration_minutes} minutes</span>
+                      </div>
+                    )}
+                    <span>Created {format(new Date(workout.created_at), 'MMM d, yyyy')}</span>
+                  </div>
+                  
+                  <div className="flex gap-2 mt-3">
+                    <Button variant="outline" size="sm">
+                      View Exercises
+                    </Button>
+                    <Button variant="outline" size="sm">
+                      Schedule Workout
+                    </Button>
+                  </div>
                 </div>
                 
-                <div className="flex gap-2 mt-3">
-                  <Button variant="outline" size="sm">
-                    View Exercises
+                <div className="flex items-center gap-2 ml-4">
+                  <ScheduleButton
+                    item={{ ...workout, type: 'workout' }}
+                    onScheduled={handleScheduled}
+                    variant="outline"
+                    size="sm"
+                    className="text-primary"
+                  />
+                  <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                    <Edit2 className="w-4 h-4" />
                   </Button>
-                  <Button variant="outline" size="sm">
-                    Schedule Workout
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-muted-foreground hover:text-destructive"
+                    onClick={() => handleDeleteWorkout(workout)}
+                  >
+                    <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
-              
-              <div className="flex items-center gap-2 ml-4">
-                <ScheduleButton
-                  item={{ ...workout, type: 'workout' }}
-                  onScheduled={handleScheduled}
-                  variant="outline"
-                  size="sm"
-                  className="text-primary"
-                />
-                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
-                  <Edit2 className="w-4 h-4" />
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="text-muted-foreground hover:text-destructive"
-                  onClick={() => deleteWorkout(workout.id)}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          </Card>
-        );
-      })}
-    </div>
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Workout</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{workoutToDelete?.workout.name}"?
+              {workoutToDelete?.scheduledDates && workoutToDelete.scheduledDates.length > 0 && (
+                <>
+                  <br /><br />
+                  <strong>This workout is scheduled for:</strong>
+                  <ul className="list-disc list-inside mt-2">
+                    {workoutToDelete.scheduledDates.map((date, index) => (
+                      <li key={index}>{date}</li>
+                    ))}
+                  </ul>
+                  <br />
+                  Deleting this workout will also remove it from all scheduled days.
+                </>
+              )}
+              <br /><br />
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteWorkout} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete Workout
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };

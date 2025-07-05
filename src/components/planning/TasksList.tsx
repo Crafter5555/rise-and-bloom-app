@@ -1,14 +1,24 @@
+
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Edit2, Trash2, CheckSquare, Calendar } from "lucide-react";
+import { CheckCircle2, Circle, Edit2, Trash2, Calendar, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { format, isAfter, isToday, isTomorrow } from "date-fns";
+import { format } from "date-fns";
 import { ScheduleButton } from "@/components/today/ScheduleButton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Task {
   id: string;
@@ -18,7 +28,6 @@ interface Task {
   due_date: string | null;
   completed: boolean;
   created_at: string;
-  completed_at: string | null;
 }
 
 interface TasksListProps {
@@ -29,8 +38,9 @@ interface TasksListProps {
 export const TasksList = ({ onRefresh, onScheduleTask }: TasksListProps) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('all');
   const [scheduledTasks, setScheduledTasks] = useState<Record<string, any[]>>({});
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [taskToDelete, setTaskToDelete] = useState<{ task: Task; scheduledDates: string[] } | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -42,7 +52,7 @@ export const TasksList = ({ onRefresh, onScheduleTask }: TasksListProps) => {
         .from('tasks')
         .select('*')
         .eq('user_id', user.id)
-        .order('due_date', { ascending: true, nullsFirst: false });
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       setTasks(data || []);
@@ -87,12 +97,61 @@ export const TasksList = ({ onRefresh, onScheduleTask }: TasksListProps) => {
     }
   };
 
-  const toggleTaskComplete = async (taskId: string, completed: boolean) => {
+  const handleDeleteTask = (task: Task) => {
+    const scheduledDates = scheduledTasks[task.id]?.map(plan => 
+      format(new Date(plan.plan_date), 'MMM d, yyyy')
+    ) || [];
+    
+    setTaskToDelete({ task, scheduledDates });
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteTask = async () => {
+    if (!taskToDelete) return;
+
+    try {
+      // Delete the task - triggers will automatically clean up daily_plans
+      const { error } = await supabase
+        .from('tasks')
+        .delete()
+        .eq('id', taskToDelete.task.id);
+
+      if (error) throw error;
+
+      setTasks(prev => prev.filter(task => task.id !== taskToDelete.task.id));
+      setScheduledTasks(prev => {
+        const updated = { ...prev };
+        delete updated[taskToDelete.task.id];
+        return updated;
+      });
+      
+      onRefresh?.();
+
+      toast({
+        title: "Success",
+        description: taskToDelete.scheduledDates.length > 0 
+          ? `Task deleted and removed from ${taskToDelete.scheduledDates.length} scheduled day(s)`
+          : "Task deleted successfully"
+      });
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete task",
+        variant: "destructive"
+      });
+    } finally {
+      setDeleteDialogOpen(false);
+      setTaskToDelete(null);
+    }
+  };
+
+  const toggleComplete = async (taskId: string, completed: boolean) => {
     try {
       const { error } = await supabase
         .from('tasks')
         .update({ 
-          completed,
+          completed: completed,
           completed_at: completed ? new Date().toISOString() : null
         })
         .eq('id', taskId);
@@ -101,11 +160,7 @@ export const TasksList = ({ onRefresh, onScheduleTask }: TasksListProps) => {
 
       setTasks(prev => 
         prev.map(task => 
-          task.id === taskId ? { 
-            ...task, 
-            completed,
-            completed_at: completed ? new Date().toISOString() : null
-          } : task
+          task.id === taskId ? { ...task, completed } : task
         )
       );
 
@@ -120,32 +175,6 @@ export const TasksList = ({ onRefresh, onScheduleTask }: TasksListProps) => {
     }
   };
 
-  const deleteTask = async (taskId: string) => {
-    try {
-      const { error } = await supabase
-        .from('tasks')
-        .delete()
-        .eq('id', taskId);
-
-      if (error) throw error;
-
-      setTasks(prev => prev.filter(task => task.id !== taskId));
-      onRefresh?.();
-
-      toast({
-        title: "Success",
-        description: "Task deleted successfully"
-      });
-    } catch (error) {
-      console.error('Error deleting task:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete task",
-        variant: "destructive"
-      });
-    }
-  };
-
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'high': return 'bg-red-100 text-red-800 border-red-200';
@@ -155,30 +184,10 @@ export const TasksList = ({ onRefresh, onScheduleTask }: TasksListProps) => {
     }
   };
 
-  const getDueDateDisplay = (dueDate: string | null) => {
-    if (!dueDate) return null;
-    const date = new Date(dueDate);
-    if (isToday(date)) return 'Today';
-    if (isTomorrow(date)) return 'Tomorrow';
-    return format(date, 'MMM d, yyyy');
-  };
-
-  const isOverdue = (task: Task) => {
-    return task.due_date && !task.completed && isAfter(new Date(), new Date(task.due_date));
-  };
-
   const handleScheduled = () => {
     fetchTasks();
     onRefresh?.();
   };
-
-  const filteredTasks = tasks.filter(task => {
-    switch (filter) {
-      case 'pending': return !task.completed;
-      case 'completed': return task.completed;
-      default: return true;
-    }
-  });
 
   useEffect(() => {
     fetchTasks();
@@ -188,51 +197,38 @@ export const TasksList = ({ onRefresh, onScheduleTask }: TasksListProps) => {
     return <div className="text-center py-4 text-muted-foreground">Loading tasks...</div>;
   }
 
-  return (
-    <div className="space-y-4">
-      <div className="flex gap-2">
-        <Button 
-          variant={filter === 'all' ? 'default' : 'outline'} 
-          size="sm"
-          onClick={() => setFilter('all')}
-        >
-          All ({tasks.length})
-        </Button>
-        <Button 
-          variant={filter === 'pending' ? 'default' : 'outline'} 
-          size="sm"
-          onClick={() => setFilter('pending')}
-        >
-          Pending ({tasks.filter(t => !t.completed).length})
-        </Button>
-        <Button 
-          variant={filter === 'completed' ? 'default' : 'outline'} 
-          size="sm"
-          onClick={() => setFilter('completed')}
-        >
-          Completed ({tasks.filter(t => t.completed).length})
-        </Button>
+  if (tasks.length === 0) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        <CheckCircle2 className="w-12 h-12 mx-auto mb-3 opacity-50" />
+        <p>No tasks created yet</p>
+        <p className="text-sm">Create your first task to get started</p>
       </div>
+    );
+  }
 
-      {filteredTasks.length === 0 ? (
-        <div className="text-center py-8 text-muted-foreground">
-          <CheckSquare className="w-12 h-12 mx-auto mb-3 opacity-50" />
-          <p>No {filter === 'all' ? '' : filter} tasks found</p>
-          <p className="text-sm">Create your first task to get started</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {filteredTasks.map((task) => {
-            const taskSchedules = scheduledTasks[task.id] || [];
-            
-            return (
-              <Card key={task.id} className={`p-4 ${isOverdue(task) ? 'border-red-200 bg-red-50' : ''} ${task.completed ? 'opacity-75' : ''}`}>
-                <div className="flex items-start gap-3">
-                  <Checkbox
-                    checked={task.completed}
-                    onCheckedChange={(checked) => toggleTaskComplete(task.id, !!checked)}
-                    className="mt-1"
-                  />
+  return (
+    <>
+      <div className="space-y-3">
+        {tasks.map((task) => {
+          const taskSchedules = scheduledTasks[task.id] || [];
+          
+          return (
+            <Card key={task.id} className="p-4">
+              <div className="flex items-start justify-between">
+                <div className="flex items-start gap-3 flex-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={`w-5 h-5 rounded-full p-0 border-2 mt-1 ${
+                      task.completed
+                        ? "bg-primary border-primary text-primary-foreground"
+                        : "border-muted hover:border-primary"
+                    }`}
+                    onClick={() => toggleComplete(task.id, !task.completed)}
+                  >
+                    {task.completed && <CheckCircle2 className="w-3 h-3" />}
+                  </Button>
                   
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
@@ -242,9 +238,6 @@ export const TasksList = ({ onRefresh, onScheduleTask }: TasksListProps) => {
                       <Badge className={getPriorityColor(task.priority)}>
                         {task.priority}
                       </Badge>
-                      {isOverdue(task) && (
-                        <Badge variant="destructive">Overdue</Badge>
-                      )}
                     </div>
                     
                     {task.description && (
@@ -279,47 +272,74 @@ export const TasksList = ({ onRefresh, onScheduleTask }: TasksListProps) => {
                         </div>
                       </div>
                     )}
-                    
+                  
                     <div className="flex items-center gap-4 text-xs text-muted-foreground">
                       {task.due_date && (
-                        <div className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          <span>{getDueDateDisplay(task.due_date)}</span>
-                        </div>
+                        <span>Due {format(new Date(task.due_date), 'MMM d, yyyy')}</span>
                       )}
                       <span>Created {format(new Date(task.created_at), 'MMM d, yyyy')}</span>
-                      {task.completed_at && (
-                        <span>Completed {format(new Date(task.completed_at), 'MMM d, yyyy')}</span>
-                      )}
                     </div>
                   </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <ScheduleButton
-                      item={{ ...task, type: 'task' }}
-                      onScheduled={handleScheduled}
-                      variant="outline"
-                      size="sm"
-                      className="text-primary"
-                    />
-                    <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
-                      <Edit2 className="w-4 h-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="text-muted-foreground hover:text-destructive"
-                      onClick={() => deleteTask(task.id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
                 </div>
-              </Card>
-            );
-          })}
-        </div>
-      )}
-    </div>
+                
+                <div className="flex items-center gap-2 ml-4">
+                  <ScheduleButton
+                    item={{ ...task, type: 'task' }}
+                    onScheduled={handleScheduled}
+                    variant="outline"
+                    size="sm"
+                    className="text-primary"
+                  />
+                  <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                    <Edit2 className="w-4 h-4" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-muted-foreground hover:text-destructive"
+                    onClick={() => handleDeleteTask(task)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Task</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{taskToDelete?.task.title}"?
+              {taskToDelete?.scheduledDates && taskToDelete.scheduledDates.length > 0 && (
+                <>
+                  <br /><br />
+                  <strong>This task is scheduled for:</strong>
+                  <ul className="list-disc list-inside mt-2">
+                    {taskToDelete.scheduledDates.map((date, index) => (
+                      <li key={index}>{date}</li>
+                    ))}
+                  </ul>
+                  <br />
+                  Deleting this task will also remove it from all scheduled days.
+                </>
+              )}
+              <br /><br />
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteTask} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete Task
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };
