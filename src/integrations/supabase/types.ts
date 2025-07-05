@@ -9,6 +9,147 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      activities: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string | null
+          duration_minutes: number | null
+          id: string
+          is_favorite: boolean | null
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number | null
+          id?: string
+          is_favorite?: boolean | null
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number | null
+          id?: string
+          is_favorite?: boolean | null
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      goals: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          period_type: string
+          progress: number | null
+          status: string
+          target_date: string | null
+          target_value: number | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          period_type?: string
+          progress?: number | null
+          status?: string
+          target_date?: string | null
+          target_value?: number | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          period_type?: string
+          progress?: number | null
+          status?: string
+          target_date?: string | null
+          target_value?: number | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      habit_completions: {
+        Row: {
+          completed_at: string
+          completion_date: string
+          habit_id: string
+          id: string
+          notes: string | null
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string
+          completion_date: string
+          habit_id: string
+          id?: string
+          notes?: string | null
+          user_id: string
+        }
+        Update: {
+          completed_at?: string
+          completion_date?: string
+          habit_id?: string
+          id?: string
+          notes?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      habits: {
+        Row: {
+          created_at: string
+          description: string | null
+          frequency: string
+          id: string
+          is_active: boolean | null
+          name: string
+          target_count: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          frequency?: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          target_count?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          frequency?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          target_count?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -36,6 +177,153 @@ export type Database = {
           updated_at?: string
           user_id?: string
           username?: string | null
+        }
+        Relationships: []
+      }
+      tasks: {
+        Row: {
+          completed: boolean | null
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          due_date: string | null
+          id: string
+          priority: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      workout_exercises: {
+        Row: {
+          created_at: string
+          duration_seconds: number | null
+          exercise_name: string
+          id: string
+          order_index: number | null
+          reps: number | null
+          rest_seconds: number | null
+          sets: number | null
+          weight: number | null
+          workout_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_seconds?: number | null
+          exercise_name: string
+          id?: string
+          order_index?: number | null
+          reps?: number | null
+          rest_seconds?: number | null
+          sets?: number | null
+          weight?: number | null
+          workout_id: string
+        }
+        Update: {
+          created_at?: string
+          duration_seconds?: number | null
+          exercise_name?: string
+          id?: string
+          order_index?: number | null
+          reps?: number | null
+          rest_seconds?: number | null
+          sets?: number | null
+          weight?: number | null
+          workout_id?: string
+        }
+        Relationships: []
+      }
+      workout_plans: {
+        Row: {
+          completed: boolean | null
+          completed_at: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          scheduled_date: string
+          updated_at: string
+          user_id: string
+          workout_id: string
+        }
+        Insert: {
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          scheduled_date: string
+          updated_at?: string
+          user_id: string
+          workout_id: string
+        }
+        Update: {
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          scheduled_date?: string
+          updated_at?: string
+          user_id?: string
+          workout_id?: string
+        }
+        Relationships: []
+      }
+      workouts: {
+        Row: {
+          created_at: string
+          description: string | null
+          difficulty_level: string | null
+          id: string
+          name: string
+          total_duration_minutes: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          difficulty_level?: string | null
+          id?: string
+          name: string
+          total_duration_minutes?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          difficulty_level?: string | null
+          id?: string
+          name?: string
+          total_duration_minutes?: number | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }

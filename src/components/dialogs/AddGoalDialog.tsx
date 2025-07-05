@@ -14,18 +14,18 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
-interface AddTaskDialogProps {
+interface AddGoalDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onTaskAdded?: () => void;
-  defaultDate?: Date;
+  onGoalAdded?: () => void;
 }
 
-export const AddTaskDialog = ({ open, onOpenChange, onTaskAdded, defaultDate }: AddTaskDialogProps) => {
+export const AddGoalDialog = ({ open, onOpenChange, onGoalAdded }: AddGoalDialogProps) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [priority, setPriority] = useState("medium");
-  const [dueDate, setDueDate] = useState<Date | undefined>(defaultDate);
+  const [periodType, setPeriodType] = useState("custom");
+  const [targetDate, setTargetDate] = useState<Date>();
+  const [targetValue, setTargetValue] = useState(100);
   const [loading, setLoading] = useState(false);
   
   const { user } = useAuth();
@@ -38,36 +38,38 @@ export const AddTaskDialog = ({ open, onOpenChange, onTaskAdded, defaultDate }: 
     
     try {
       const { error } = await supabase
-        .from('tasks')
+        .from('goals')
         .insert({
           user_id: user.id,
           title: title.trim(),
           description: description.trim() || null,
-          priority,
-          due_date: dueDate ? format(dueDate, 'yyyy-MM-dd') : null
+          period_type: periodType,
+          target_date: targetDate ? format(targetDate, 'yyyy-MM-dd') : null,
+          target_value: targetValue
         });
 
       if (error) throw error;
 
       toast({
         title: "Success",
-        description: "Task created successfully!"
+        description: "Goal created successfully!"
       });
 
       // Reset form
       setTitle("");
       setDescription("");
-      setPriority("medium");
-      setDueDate(defaultDate);
+      setPeriodType("custom");
+      setTargetDate(undefined);
+      setTargetValue(100);
       
-      onTaskAdded?.();
+      onGoalAdded?.();
       onOpenChange(false);
       
     } catch (error) {
-      console.error('Error creating task:', error);
+      console.error('Error creating goal:', error);
       toast({
         title: "Error",
-        description: "Failed to create task. Please try again.",
+        description: "Failed to create goal. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -79,70 +81,82 @@ export const AddTaskDialog = ({ open, onOpenChange, onTaskAdded, defaultDate }: 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md mx-4">
         <DialogHeader>
-          <DialogTitle className="text-xl font-semibold">Create New Task</DialogTitle>
+          <DialogTitle className="text-xl font-semibold">Create New Goal</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="task-title">Task Title *</Label>
+            <Label htmlFor="goal-title">Goal Title *</Label>
             <Input
-              id="task-title"
-              placeholder="e.g., Finish project report"
+              id="goal-title"
+              placeholder="e.g., Read 12 books this year"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="task-description">Description (Optional)</Label>
+            <Label htmlFor="goal-description">Description (Optional)</Label>
             <Textarea
-              id="task-description"
-              placeholder="What needs to be done?"
+              id="goal-description"
+              placeholder="What do you want to achieve?"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="min-h-[80px] resize-none"
             />
           </div>
 
+          <div className="space-y-2">
+            <Label>Period Type</Label>
+            <Select value={periodType} onValueChange={setPeriodType}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="weekly">Weekly</SelectItem>
+                <SelectItem value="monthly">Monthly</SelectItem>
+                <SelectItem value="yearly">Yearly</SelectItem>
+                <SelectItem value="custom">Custom</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Priority</Label>
-              <Select value={priority} onValueChange={setPriority}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="low">Low</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Due Date</Label>
+              <Label>Target Date</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     className={cn(
                       "w-full justify-start text-left font-normal",
-                      !dueDate && "text-muted-foreground"
+                      !targetDate && "text-muted-foreground"
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dueDate ? format(dueDate, "PPP") : "Pick a date"}
+                    {targetDate ? format(targetDate, "PPP") : "Pick a date"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
                   <Calendar
                     mode="single"
-                    selected={dueDate}
-                    onSelect={setDueDate}
+                    selected={targetDate}
+                    onSelect={setTargetDate}
                     initialFocus
                   />
                 </PopoverContent>
               </Popover>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Target Value (%)</Label>
+              <Input
+                type="number"
+                min="1"
+                max="100"
+                value={targetValue}
+                onChange={(e) => setTargetValue(parseInt(e.target.value) || 100)}
+              />
             </div>
           </div>
         </div>
@@ -161,7 +175,7 @@ export const AddTaskDialog = ({ open, onOpenChange, onTaskAdded, defaultDate }: 
             disabled={!title.trim() || loading}
             className="flex-1"
           >
-            {loading ? "Creating..." : "Create Task"}
+            {loading ? "Creating..." : "Create Goal"}
           </Button>
         </div>
       </DialogContent>
