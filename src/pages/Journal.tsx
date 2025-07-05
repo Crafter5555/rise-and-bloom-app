@@ -1,13 +1,23 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MorningPlanningDialog } from "@/components/dialogs/MorningPlanningDialog";
 import { EveningReflectionDialog } from "@/components/dialogs/EveningReflectionDialog";
 import { Plus } from "lucide-react";
+import { getRecentQuizEntries, hasCompletedMorningQuiz, hasCompletedEveningQuiz, getTodayDateKey } from "@/utils/quizStorage";
 
 const Journal = () => {
   const [morningPlanningOpen, setMorningPlanningOpen] = useState(false);
   const [eveningReflectionOpen, setEveningReflectionOpen] = useState(false);
+  const [recentEntries, setRecentEntries] = useState<Array<{ date: string; entry: any }>>([]);
+
+  useEffect(() => {
+    setRecentEntries(getRecentQuizEntries());
+  }, []);
+
+  const todayKey = getTodayDateKey();
+  const hasTodayMorning = hasCompletedMorningQuiz();
+  const hasTodayEvening = hasCompletedEveningQuiz();
 
   return (
     <div className="min-h-screen bg-gradient-calm pb-20 px-4 pt-6">
@@ -28,24 +38,36 @@ const Journal = () => {
       {/* Morning & Evening Cards */}
       <div className="grid grid-cols-2 gap-4 mb-6">
         <Card 
-          className="p-4 shadow-soft bg-gradient-to-br from-yellow-50 to-orange-50 border-yellow-200 cursor-pointer hover:shadow-medium transition-shadow"
-          onClick={() => setMorningPlanningOpen(true)}
+          className={`p-4 shadow-soft bg-gradient-to-br from-yellow-50 to-orange-50 border-yellow-200 cursor-pointer hover:shadow-medium transition-shadow ${
+            hasTodayMorning ? 'opacity-60' : ''
+          }`}
+          onClick={() => !hasTodayMorning && setMorningPlanningOpen(true)}
         >
           <div className="text-center">
-            <div className="text-2xl mb-2">☀️</div>
-            <h3 className="font-semibold text-foreground mb-1">Start your morning planning</h3>
-            <p className="text-xs text-muted-foreground">Plan your day and set your focus</p>
+            <div className="text-2xl mb-2">{hasTodayMorning ? '✅' : '☀️'}</div>
+            <h3 className="font-semibold text-foreground mb-1">
+              {hasTodayMorning ? 'Morning planning complete' : 'Start your morning planning'}
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              {hasTodayMorning ? 'You completed your morning quiz today' : 'Plan your day and set your focus'}
+            </p>
           </div>
         </Card>
         
         <Card 
-          className="p-4 shadow-soft bg-gradient-to-br from-purple-50 to-blue-50 border-purple-200 cursor-pointer hover:shadow-medium transition-shadow"
-          onClick={() => setEveningReflectionOpen(true)}
+          className={`p-4 shadow-soft bg-gradient-to-br from-purple-50 to-blue-50 border-purple-200 cursor-pointer hover:shadow-medium transition-shadow ${
+            hasTodayEvening ? 'opacity-60' : ''
+          }`}
+          onClick={() => !hasTodayEvening && setEveningReflectionOpen(true)}
         >
           <div className="text-center">
-            <div className="text-2xl mb-2">🌙</div>
-            <h3 className="font-semibold text-foreground mb-1">Evening reflection time</h3>
-            <p className="text-xs text-muted-foreground">Reflect on your day</p>
+            <div className="text-2xl mb-2">{hasTodayEvening ? '✅' : '🌙'}</div>
+            <h3 className="font-semibold text-foreground mb-1">
+              {hasTodayEvening ? 'Evening reflection complete' : 'Evening reflection time'}
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              {hasTodayEvening ? 'You completed your evening reflection today' : 'Reflect on your day'}
+            </p>
           </div>
         </Card>
       </div>
@@ -61,7 +83,9 @@ const Journal = () => {
             </div>
           </div>
           <div className="text-right">
-            <div className="text-2xl font-bold text-warning">0</div>
+            <div className="text-2xl font-bold text-warning">
+              {recentEntries.filter(e => e.entry.morning || e.entry.evening).length}
+            </div>
           </div>
         </div>
       </Card>
@@ -70,13 +94,65 @@ const Journal = () => {
       <div className="mb-6">
         <h3 className="text-lg font-semibold text-foreground mb-4">Recent Entries</h3>
         
-        <div className="text-center py-12">
-          <div className="text-4xl mb-4">📖</div>
-          <h4 className="text-lg font-medium text-foreground mb-2">No journal entries yet</h4>
-          <p className="text-sm text-muted-foreground mb-6">
-            Start journaling to track your thoughts and mood over time
-          </p>
-        </div>
+        {recentEntries.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="text-4xl mb-4">📖</div>
+            <h4 className="text-lg font-medium text-foreground mb-2">No journal entries yet</h4>
+            <p className="text-sm text-muted-foreground mb-6">
+              Start journaling to track your thoughts and mood over time
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {recentEntries.map((entry, index) => (
+              <Card key={index} className="p-4 shadow-soft">
+                <div className="flex justify-between items-start mb-3">
+                  <h4 className="font-semibold text-foreground">
+                    {new Date(entry.date).toLocaleDateString('en-US', { 
+                      weekday: 'long', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    })}
+                  </h4>
+                  <div className="flex gap-1">
+                    {entry.entry.morning && <span className="text-yellow-500">☀️</span>}
+                    {entry.entry.evening && <span className="text-blue-500">🌙</span>}
+                  </div>
+                </div>
+                {entry.entry.morning && (
+                  <div className="mb-3 p-3 bg-yellow-50 rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-yellow-600">☀️</span>
+                      <span className="text-sm font-medium text-yellow-800">Morning Planning</span>
+                    </div>
+                    {entry.entry.morning.mainFocus && (
+                      <p className="text-sm text-muted-foreground mb-1">
+                        <strong>Focus:</strong> {entry.entry.morning.mainFocus}
+                      </p>
+                    )}
+                    <div className="flex gap-4 text-xs text-muted-foreground">
+                      <span>😴 {entry.entry.morning.sleepQuality}/10</span>
+                      <span>⏰ {entry.entry.morning.sleepHours}h</span>
+                    </div>
+                  </div>
+                )}
+                {entry.entry.evening && (
+                  <div className="p-3 bg-blue-50 rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-blue-600">🌙</span>
+                      <span className="text-sm font-medium text-blue-800">Evening Reflection</span>
+                    </div>
+                    <div className="flex gap-4 text-xs text-muted-foreground">
+                      <span>😊 {entry.entry.evening.overallMood}/10</span>
+                      <span>⚡ {entry.entry.evening.energyLevel}/10</span>
+                      <span>✅ {entry.entry.evening.completedGoals.length} goals</span>
+                    </div>
+                  </div>
+                )}
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Floating Action Button */}

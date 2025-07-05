@@ -7,14 +7,19 @@ import { AIAssistantPanel } from "@/components/today/AIAssistantCard";
 import { EveningCheckIn } from "@/components/today/EveningCheckIn";
 import { AddToPlanSheet } from "@/components/today/AddToPlanSheet";
 import { QuizReminder } from "@/components/today/QuizReminder";
+import { MorningPlanningDialog } from "@/components/dialogs/MorningPlanningDialog";
+import { EveningReflectionDialog } from "@/components/dialogs/EveningReflectionDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { hasCompletedMorningQuiz, hasCompletedEveningQuiz } from "@/utils/quizStorage";
 
 const Today = () => {
   const [addToPlanOpen, setAddToPlanOpen] = useState(false);
   const [showQuizReminder, setShowQuizReminder] = useState(true);
   const [quizType, setQuizType] = useState<"morning" | "evening">("morning");
   const [isEvening, setIsEvening] = useState(false);
+  const [morningQuizOpen, setMorningQuizOpen] = useState(false);
+  const [eveningQuizOpen, setEveningQuizOpen] = useState(false);
   
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
@@ -29,15 +34,18 @@ const Today = () => {
     setIsEvening(hour >= 18);
     setQuizType(hour >= 18 ? "evening" : "morning");
     
-    // Show quiz reminders only during specific times
-    const showMorningQuiz = hour >= 6 && hour < 12;
-    const showEveningQuiz = hour >= 18 && hour < 23;
+    // Show quiz reminders only during specific times and if not completed
+    const showMorningQuiz = hour >= 6 && hour < 12 && !hasCompletedMorningQuiz();
+    const showEveningQuiz = hour >= 18 && hour < 23 && !hasCompletedEveningQuiz();
     setShowQuizReminder(showMorningQuiz || showEveningQuiz);
   }, []);
 
   const handleStartQuiz = () => {
-    console.log(`Starting ${quizType} quiz`);
-    // This would open the appropriate quiz dialog
+    if (quizType === "morning") {
+      setMorningQuizOpen(true);
+    } else {
+      setEveningQuizOpen(true);
+    }
     setShowQuizReminder(false);
   };
 
@@ -108,6 +116,16 @@ const Today = () => {
       <AddToPlanSheet 
         open={addToPlanOpen} 
         onOpenChange={setAddToPlanOpen} 
+      />
+
+      {/* Quiz Dialogs */}
+      <MorningPlanningDialog 
+        open={morningQuizOpen} 
+        onOpenChange={setMorningQuizOpen} 
+      />
+      <EveningReflectionDialog 
+        open={eveningQuizOpen} 
+        onOpenChange={setEveningQuizOpen} 
       />
     </div>
   );

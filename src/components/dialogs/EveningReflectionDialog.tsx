@@ -7,6 +7,8 @@ import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { ArrowLeft, X } from "lucide-react";
+import { saveEveningQuiz } from "@/utils/quizStorage";
+import { useToast } from "@/hooks/use-toast";
 
 interface EveningReflectionDialogProps {
   open: boolean;
@@ -38,6 +40,7 @@ export const EveningReflectionDialog = ({ open, onOpenChange }: EveningReflectio
     otherThoughts: "",
     tomorrowPriority: ""
   });
+  const { toast } = useToast();
 
   const totalSteps = 10;
   const currentDate = new Date().toLocaleDateString('en-US', { 
@@ -54,7 +57,11 @@ export const EveningReflectionDialog = ({ open, onOpenChange }: EveningReflectio
       setCurrentStep(currentStep + 1);
     } else {
       // Complete the evening reflection
-      console.log("Evening reflection completed:", eveningData);
+      saveEveningQuiz(eveningData);
+      toast({
+        title: "Evening reflection completed! 🌙",
+        description: "Your responses have been saved to your journal.",
+      });
       handleClose();
     }
   };

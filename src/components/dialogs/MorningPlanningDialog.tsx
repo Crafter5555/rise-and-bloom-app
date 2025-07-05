@@ -6,6 +6,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 import { ArrowLeft, Plus, X } from "lucide-react";
+import { saveMorningQuiz } from "@/utils/quizStorage";
+import { useToast } from "@/hooks/use-toast";
 
 interface MorningPlanningDialogProps {
   open: boolean;
@@ -31,6 +33,7 @@ export const MorningPlanningDialog = ({ open, onOpenChange }: MorningPlanningDia
     dailyGoals: ["", "", ""],
     gratitude: ""
   });
+  const { toast } = useToast();
 
   const totalSteps = 6;
   const currentDate = new Date().toLocaleDateString('en-US', { 
@@ -44,7 +47,11 @@ export const MorningPlanningDialog = ({ open, onOpenChange }: MorningPlanningDia
       setCurrentStep(currentStep + 1);
     } else {
       // Complete the morning planning
-      console.log("Morning planning completed:", morningData);
+      saveMorningQuiz(morningData);
+      toast({
+        title: "Morning planning completed! ☀️",
+        description: "Your responses have been saved to your journal.",
+      });
       handleClose();
     }
   };
