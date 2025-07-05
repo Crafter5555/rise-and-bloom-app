@@ -1,3 +1,6 @@
+
+import React from 'react';
+
 // Offline functionality utilities
 
 export class OfflineManager {

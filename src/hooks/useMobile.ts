@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
@@ -124,7 +125,7 @@ export const useMobile = () => {
     if (!isNative) return;
 
     try {
-      await LocalNotifications.cancel({ notifications: [{ id: id.toString() }] });
+      await LocalNotifications.cancel({ notifications: [{ id }] });
     } catch (error) {
       console.error('Failed to cancel notification:', error);
     }
