@@ -1,5 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { useMobile } from "@/hooks/useMobile";
+import { ImpactStyle } from "@capacitor/haptics";
 
 const navigation = [
   {
@@ -32,6 +34,12 @@ const navigation = [
 export const BottomNavigation = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { hapticFeedback } = useMobile();
+
+  const handleNavigation = async (path: string) => {
+    await hapticFeedback(ImpactStyle.Light);
+    navigate(path);
+  };
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border shadow-strong">
@@ -41,7 +49,7 @@ export const BottomNavigation = () => {
           return (
             <button
               key={item.name}
-              onClick={() => navigate(item.path)}
+              onClick={() => handleNavigation(item.path)}
               className={cn(
                 "flex flex-col items-center py-2 px-3 rounded-xl transition-all duration-200",
                 "min-w-[60px] text-xs font-medium",
