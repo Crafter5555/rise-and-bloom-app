@@ -25,6 +25,13 @@ interface UserWorkout {
   name: string;
 }
 
+interface UserTask {
+  id: string;
+  title: string;
+  priority?: string;
+  due_date?: string;
+}
+
 interface AddToPlanSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -37,6 +44,7 @@ export const AddToPlanSheet = ({ open, onOpenChange, onPlanAdded }: AddToPlanShe
   const [userHabits, setUserHabits] = useState<UserHabit[]>([]);
   const [userActivities, setUserActivities] = useState<UserActivity[]>([]);
   const [userWorkouts, setUserWorkouts] = useState<UserWorkout[]>([]);
+  const [userTasks, setUserTasks] = useState<UserTask[]>([]);
   const [loading, setLoading] = useState(false);
   
   const { user } = useAuth();
@@ -47,15 +55,17 @@ export const AddToPlanSheet = ({ open, onOpenChange, onPlanAdded }: AddToPlanShe
     if (!user) return;
     
     try {
-      const [habitsResult, activitiesResult, workoutsResult] = await Promise.all([
+      const [habitsResult, activitiesResult, workoutsResult, tasksResult] = await Promise.all([
         supabase.from('habits').select('id, name').eq('user_id', user.id).eq('is_active', true),
         supabase.from('activities').select('id, name').eq('user_id', user.id),
-        supabase.from('workouts').select('id, name').eq('user_id', user.id)
+        supabase.from('workouts').select('id, name').eq('user_id', user.id),
+        supabase.from('tasks').select('id, title, priority, due_date').eq('user_id', user.id).eq('completed', false)
       ]);
 
       if (habitsResult.data) setUserHabits(habitsResult.data);
       if (activitiesResult.data) setUserActivities(activitiesResult.data);
       if (workoutsResult.data) setUserWorkouts(workoutsResult.data);
+      if (tasksResult.data) setUserTasks(tasksResult.data);
     } catch (error) {
       console.error('Error fetching user items:', error);
     }
@@ -116,6 +126,10 @@ export const AddToPlanSheet = ({ open, onOpenChange, onPlanAdded }: AddToPlanShe
   const handleAddWorkout = async (workout: UserWorkout) => {
     await addToDailyPlan('workout', workout.name, workout.id);
   };
+  
+  const handleAddExistingTask = async (task: UserTask) => {
+    await addToDailyPlan('task', task.title, task.id);
+  };
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -133,8 +147,51 @@ export const AddToPlanSheet = ({ open, onOpenChange, onPlanAdded }: AddToPlanShe
           </TabsList>
           
           <TabsContent value="task" className="space-y-4">
+            {/* Existing Tasks Section */}
+            {userTasks.length > 0 && (
+              <>
+                <div>
+                  <Label>Select from your existing tasks</Label>
+                  <div className="space-y-2 mt-2">
+                    {userTasks.map((task) => (
+                      <Button
+                        key={task.id}
+                        variant="outline"
+                        className="w-full justify-between"
+                        onClick={() => handleAddExistingTask(task)}
+                        disabled={loading}
+                      >
+                        <span>{task.title}</span>
+                        <div className="flex items-center gap-2">
+                          {task.priority && (
+                            <Badge variant="secondary" className="text-xs">
+                              {task.priority}
+                            </Badge>
+                          )}
+                          {task.due_date && (
+                            <Badge variant="outline" className="text-xs">
+                              Due: {format(new Date(task.due_date), 'MMM d')}
+                            </Badge>
+                          )}
+                        </div>
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-4">
+                  <div className="flex-1 h-px bg-border"></div>
+                  <span className="text-sm text-muted-foreground">or</span>
+                  <div className="flex-1 h-px bg-border"></div>
+                </div>
+              </>
+            )}
+            
+            {/* Custom Task Section */}
             <div>
-              <Label htmlFor="task-title">What do you need to do?</Label>
+              <Label htmlFor="task-title">
+                {userTasks.length > 0 ? "Create a new task" : "What do you need to do?"}
+              </Label>
               <Input
                 id="task-title"
                 placeholder="e.g., Review presentation"
@@ -143,8 +200,8 @@ export const AddToPlanSheet = ({ open, onOpenChange, onPlanAdded }: AddToPlanShe
                 className="mt-2"
               />
             </div>
-            <Button onClick={handleAddTask} className="w-full" disabled={!taskTitle.trim()}>
-              Add Task
+            <Button onClick={handleAddTask} className="w-full" disabled={!taskTitle.trim() || loading}>
+              Add New Task
             </Button>
           </TabsContent>
           
