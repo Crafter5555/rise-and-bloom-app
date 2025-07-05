@@ -85,21 +85,25 @@ const Stats = () => {
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="overview" className="text-xs">
             <Activity className="w-4 h-4 mr-1" />
             Overview
+          </TabsTrigger>
+          <TabsTrigger value="tasks" className="text-xs">
+            <Target className="w-4 h-4 mr-1" />
+            Tasks
           </TabsTrigger>
           <TabsTrigger value="digital" className="text-xs">
             <Smartphone className="w-4 h-4 mr-1" />
             Digital
           </TabsTrigger>
           <TabsTrigger value="habits" className="text-xs">
-            <Target className="w-4 h-4 mr-1" />
+            <Heart className="w-4 h-4 mr-1" />
             Habits
           </TabsTrigger>
           <TabsTrigger value="wellness" className="text-xs">
-            <Heart className="w-4 h-4 mr-1" />
+            <Brain className="w-4 h-4 mr-1" />
             Wellness
           </TabsTrigger>
         </TabsList>
@@ -178,6 +182,261 @@ const Stats = () => {
               </div>
             </div>
           </Card>
+        </TabsContent>
+
+        {/* Tasks Tab */}
+        <TabsContent value="tasks" className="space-y-6">
+          {/* Task Overview Metrics */}
+          <div className="grid grid-cols-2 gap-4">
+            <Card className="p-4 shadow-soft">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium">Today's Tasks</span>
+                <div className="flex items-center gap-1">
+                  <TrendingUp className="w-4 h-4 text-green-500" />
+                  <span className="text-xs text-green-600">+2 vs yesterday</span>
+                </div>
+              </div>
+              <div className="text-2xl font-bold text-primary">8/12</div>
+              <div className="text-xs text-muted-foreground">67% complete</div>
+            </Card>
+
+            <Card className="p-4 shadow-soft">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium">Weekly Average</span>
+                <div className="flex items-center gap-1">
+                  <TrendingUp className="w-4 h-4 text-green-500" />
+                  <span className="text-xs text-green-600">+15%</span>
+                </div>
+              </div>
+              <div className="text-2xl font-bold text-success">74%</div>
+              <div className="text-xs text-muted-foreground">completion rate</div>
+            </Card>
+
+            <Card className="p-4 shadow-soft">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium">Task Streak</span>
+                <div className="flex items-center gap-1">
+                  <TrendingUp className="w-4 h-4 text-green-500" />
+                  <span className="text-xs text-green-600">+3 days</span>
+                </div>
+              </div>
+              <div className="text-2xl font-bold text-warning">9</div>
+              <div className="text-xs text-muted-foreground">consecutive days</div>
+            </Card>
+
+            <Card className="p-4 shadow-soft">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium">Avg Completion</span>
+                <div className="flex items-center gap-1">
+                  <Clock className="w-4 h-4 text-blue-500" />
+                  <span className="text-xs text-blue-600">2.3h earlier</span>
+                </div>
+              </div>
+              <div className="text-2xl font-bold text-accent">2:30 PM</div>
+              <div className="text-xs text-muted-foreground">daily average</div>
+            </Card>
+          </div>
+
+          {/* Task Categories Breakdown */}
+          <Card className="p-6 shadow-soft">
+            <h3 className="text-lg font-semibold mb-4">Task Categories This Week</h3>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg">💼</span>
+                    <div>
+                      <div className="font-medium text-sm">Work Tasks</div>
+                      <div className="text-xs text-muted-foreground">32 tasks • 89% complete</div>
+                    </div>
+                  </div>
+                  <Badge className="bg-blue-100 text-blue-800">High Priority</Badge>
+                </div>
+                <Progress value={89} className="h-2" />
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg">🏠</span>
+                    <div>
+                      <div className="font-medium text-sm">Personal</div>
+                      <div className="text-xs text-muted-foreground">18 tasks • 67% complete</div>
+                    </div>
+                  </div>
+                  <Badge variant="outline">Medium Priority</Badge>
+                </div>
+                <Progress value={67} className="h-2" />
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg">💪</span>
+                    <div>
+                      <div className="font-medium text-sm">Health & Fitness</div>
+                      <div className="text-xs text-muted-foreground">12 tasks • 83% complete</div>
+                    </div>
+                  </div>
+                  <Badge className="bg-green-100 text-green-800">On Track</Badge>
+                </div>
+                <Progress value={83} className="h-2" />
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg">📚</span>
+                    <div>
+                      <div className="font-medium text-sm">Learning</div>
+                      <div className="text-xs text-muted-foreground">8 tasks • 50% complete</div>
+                    </div>
+                  </div>
+                  <Badge variant="outline">Low Priority</Badge>
+                </div>
+                <Progress value={50} className="h-2" />
+              </div>
+            </div>
+          </Card>
+
+          {/* Productivity Patterns */}
+          <Card className="p-6 shadow-soft">
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Clock className="w-5 h-5 text-orange-500" />
+              Peak Productivity Hours
+            </h3>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">9-11 AM</span>
+                <div className="flex items-center gap-2">
+                  <Progress value={95} className="w-20 h-2" />
+                  <span className="text-xs text-muted-foreground w-8">95%</span>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">2-4 PM</span>
+                <div className="flex items-center gap-2">
+                  <Progress value={78} className="w-20 h-2" />
+                  <span className="text-xs text-muted-foreground w-8">78%</span>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">7-9 PM</span>
+                <div className="flex items-center gap-2">
+                  <Progress value={62} className="w-20 h-2" />
+                  <span className="text-xs text-muted-foreground w-8">62%</span>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">11 PM-12 AM</span>
+                <div className="flex items-center gap-2">
+                  <Progress value={23} className="w-20 h-2" />
+                  <span className="text-xs text-muted-foreground w-8">23%</span>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          {/* Weekly Task Trends */}
+          <Card className="p-6 shadow-soft">
+            <h3 className="text-lg font-semibold mb-4">Weekly Completion Trends</h3>
+            <div className="space-y-4">
+              <div className="grid grid-cols-7 gap-2 text-center">
+                {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, index) => {
+                  const completions = [12, 8, 15, 11, 9, 6, 7][index];
+                  const maxHeight = 15;
+                  return (
+                    <div key={day} className="flex flex-col items-center gap-2">
+                      <div className="text-xs text-muted-foreground">{day}</div>
+                      <div className="w-6 bg-muted rounded-full h-16 flex items-end overflow-hidden">
+                        <div 
+                          className="w-full bg-gradient-to-t from-blue-400 to-blue-600 rounded-full"
+                          style={{ height: `${(completions / maxHeight) * 100}%` }}
+                        />
+                      </div>
+                      <div className="text-xs font-medium">{completions}</div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="text-center">
+                <div className="text-sm text-muted-foreground">Average: 9.7 tasks completed per day</div>
+              </div>
+            </div>
+          </Card>
+
+          {/* Task Insights */}
+          <Card className="p-6 shadow-soft">
+            <h3 className="text-lg font-semibold mb-4">Task Insights</h3>
+            <div className="space-y-4">
+              <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <Target className="w-4 h-4 text-green-600" />
+                  <span className="font-medium text-green-800">Productivity Peak</span>
+                </div>
+                <p className="text-sm text-green-700">
+                  You complete 40% more tasks on Wednesday mornings. Consider scheduling important tasks during this time.
+                </p>
+              </div>
+
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <Clock className="w-4 h-4 text-blue-600" />
+                  <span className="font-medium text-blue-800">Early Bird Advantage</span>
+                </div>
+                <p className="text-sm text-blue-700">
+                  Tasks completed before 11 AM have a 95% success rate vs 68% for afternoon tasks.
+                </p>
+              </div>
+
+              <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <Activity className="w-4 h-4 text-orange-600" />
+                  <span className="font-medium text-orange-800">Batch Processing</span>
+                </div>
+                <p className="text-sm text-orange-700">
+                  Grouping similar tasks increases completion rate by 23%. Try batching work tasks together.
+                </p>
+              </div>
+            </div>
+          </Card>
+
+          {/* Overdue & Upcoming */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Card className="p-4 shadow-soft">
+              <h3 className="text-lg font-semibold mb-3 text-red-700">⚠️ Overdue Tasks</h3>
+              <div className="space-y-2">
+                <div className="text-sm">
+                  <div className="font-medium">Review quarterly goals</div>
+                  <div className="text-xs text-red-600">2 days overdue</div>
+                </div>
+                <div className="text-sm">
+                  <div className="font-medium">Schedule dentist appointment</div>
+                  <div className="text-xs text-red-600">1 day overdue</div>
+                </div>
+              </div>
+              <div className="mt-3 text-xs text-muted-foreground">
+                2 of 47 total tasks overdue (4.3%)
+              </div>
+            </Card>
+
+            <Card className="p-4 shadow-soft">
+              <h3 className="text-lg font-semibold mb-3 text-blue-700">📅 Upcoming</h3>
+              <div className="space-y-2">
+                <div className="text-sm">
+                  <div className="font-medium">Finish presentation draft</div>
+                  <div className="text-xs text-blue-600">Due tomorrow</div>
+                </div>
+                <div className="text-sm">
+                  <div className="font-medium">Team standup preparation</div>
+                  <div className="text-xs text-blue-600">Due in 2 days</div>
+                </div>
+              </div>
+              <div className="mt-3 text-xs text-muted-foreground">
+                8 tasks due this week
+              </div>
+            </Card>
+          </div>
         </TabsContent>
 
         {/* Digital Health Tab */}
