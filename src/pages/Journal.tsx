@@ -1,8 +1,14 @@
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { MorningPlanningDialog } from "@/components/dialogs/MorningPlanningDialog";
+import { EveningReflectionDialog } from "@/components/dialogs/EveningReflectionDialog";
 import { Plus } from "lucide-react";
 
 const Journal = () => {
+  const [morningPlanningOpen, setMorningPlanningOpen] = useState(false);
+  const [eveningReflectionOpen, setEveningReflectionOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-gradient-calm pb-20 px-4 pt-6">
       {/* Header */}
@@ -21,7 +27,10 @@ const Journal = () => {
 
       {/* Morning & Evening Cards */}
       <div className="grid grid-cols-2 gap-4 mb-6">
-        <Card className="p-4 shadow-soft bg-gradient-to-br from-yellow-50 to-orange-50 border-yellow-200">
+        <Card 
+          className="p-4 shadow-soft bg-gradient-to-br from-yellow-50 to-orange-50 border-yellow-200 cursor-pointer hover:shadow-medium transition-shadow"
+          onClick={() => setMorningPlanningOpen(true)}
+        >
           <div className="text-center">
             <div className="text-2xl mb-2">☀️</div>
             <h3 className="font-semibold text-foreground mb-1">Start your morning planning</h3>
@@ -29,7 +38,10 @@ const Journal = () => {
           </div>
         </Card>
         
-        <Card className="p-4 shadow-soft bg-gradient-to-br from-purple-50 to-blue-50 border-purple-200">
+        <Card 
+          className="p-4 shadow-soft bg-gradient-to-br from-purple-50 to-blue-50 border-purple-200 cursor-pointer hover:shadow-medium transition-shadow"
+          onClick={() => setEveningReflectionOpen(true)}
+        >
           <div className="text-center">
             <div className="text-2xl mb-2">🌙</div>
             <h3 className="font-semibold text-foreground mb-1">Evening reflection time</h3>
@@ -74,6 +86,18 @@ const Journal = () => {
       >
         <Plus className="w-6 h-6" />
       </Button>
+
+      {/* Morning Planning Dialog */}
+      <MorningPlanningDialog 
+        open={morningPlanningOpen} 
+        onOpenChange={setMorningPlanningOpen} 
+      />
+      
+      {/* Evening Reflection Dialog */}
+      <EveningReflectionDialog 
+        open={eveningReflectionOpen} 
+        onOpenChange={setEveningReflectionOpen} 
+      />
     </div>
   );
 };

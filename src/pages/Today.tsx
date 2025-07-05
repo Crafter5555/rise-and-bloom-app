@@ -5,12 +5,14 @@ import { ProgressRing } from "@/components/ui/progress-ring";
 import { QuickActionButton } from "@/components/ui/quick-action-button";
 import { AddTaskDialog } from "@/components/dialogs/AddTaskDialog";
 import { AddWorkoutDialog } from "@/components/dialogs/AddWorkoutDialog";
+import { MorningPlanningDialog } from "@/components/dialogs/MorningPlanningDialog";
 import { Plus } from "lucide-react";
 
 const Today = () => {
   const [todayProgress] = useState(0);
   const [addTaskOpen, setAddTaskOpen] = useState(false);
   const [addWorkoutOpen, setAddWorkoutOpen] = useState(false);
+  const [morningPlanningOpen, setMorningPlanningOpen] = useState(false);
   
   const currentDate = new Date();
   const dayName = currentDate.toLocaleDateString('en-US', { weekday: 'long' });
@@ -78,9 +80,9 @@ const Today = () => {
         <h3 className="text-lg font-semibold text-foreground mb-4">Quick Actions</h3>
         <div className="grid grid-cols-3 gap-4">
           <QuickActionButton
-            icon="🎯"
-            label="Add Goal"
-            onClick={() => setAddTaskOpen(true)}
+            icon="☀️"
+            label="Morning Plan"
+            onClick={() => setMorningPlanningOpen(true)}
             variant="primary"
           />
           <QuickActionButton
@@ -90,9 +92,9 @@ const Today = () => {
             variant="secondary"
           />
           <QuickActionButton
-            icon="✅"
-            label="Progress"
-            onClick={() => {}}
+            icon="🎯"
+            label="Add Task"
+            onClick={() => setAddTaskOpen(true)}
             variant="success"
           />
         </div>
@@ -122,6 +124,7 @@ const Today = () => {
       {/* Dialogs */}
       <AddTaskDialog open={addTaskOpen} onOpenChange={setAddTaskOpen} />
       <AddWorkoutDialog open={addWorkoutOpen} onOpenChange={setAddWorkoutOpen} />
+      <MorningPlanningDialog open={morningPlanningOpen} onOpenChange={setMorningPlanningOpen} />
     </div>
   );
 };
