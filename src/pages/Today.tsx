@@ -182,7 +182,11 @@ const Today = () => {
       {/* Add to Plan Sheet */}
       <AddToPlanSheet 
         open={addToPlanOpen} 
-        onOpenChange={setAddToPlanOpen} 
+        onOpenChange={setAddToPlanOpen}
+        onPlanAdded={() => {
+          // Refresh the daily plan list when items are added
+          window.location.reload();
+        }}
       />
 
       {/* Quiz Dialogs */}

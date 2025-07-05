@@ -45,6 +45,51 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_plans: {
+        Row: {
+          completed: boolean
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          id: string
+          item_id: string | null
+          item_type: string
+          order_index: number | null
+          plan_date: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          item_id?: string | null
+          item_type: string
+          order_index?: number | null
+          plan_date: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          item_id?: string | null
+          item_type?: string
+          order_index?: number | null
+          plan_date?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       goals: {
         Row: {
           created_at: string

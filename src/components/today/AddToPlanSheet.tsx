@@ -1,56 +1,120 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { format } from "date-fns";
+import { toast } from "sonner";
 
-const activities = [
-  "Meditate", "Read", "Walk", "Gratitude", "Stretch", "Call a friend",
-  "Listen to music", "Take photos", "Learn something new", "Tidy up"
-];
+interface UserHabit {
+  id: string;
+  name: string;
+}
 
-const habits = [
-  "Drink water", "Journal", "Exercise", "Take vitamins", "Practice mindfulness",
-  "Read news", "Plan tomorrow", "Skincare routine", "Limit social media"
-];
+interface UserActivity {
+  id: string;
+  name: string;
+}
+
+interface UserWorkout {
+  id: string;
+  name: string;
+}
 
 interface AddToPlanSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onPlanAdded?: () => void;
 }
 
-export const AddToPlanSheet = ({ open, onOpenChange }: AddToPlanSheetProps) => {
+export const AddToPlanSheet = ({ open, onOpenChange, onPlanAdded }: AddToPlanSheetProps) => {
   const [taskTitle, setTaskTitle] = useState("");
-  const [selectedActivity, setSelectedActivity] = useState("");
-  const [selectedHabit, setSelectedHabit] = useState("");
   const [workoutName, setWorkoutName] = useState("");
+  const [userHabits, setUserHabits] = useState<UserHabit[]>([]);
+  const [userActivities, setUserActivities] = useState<UserActivity[]>([]);
+  const [userWorkouts, setUserWorkouts] = useState<UserWorkout[]>([]);
+  const [loading, setLoading] = useState(false);
+  
+  const { user } = useAuth();
+  const today = format(new Date(), 'yyyy-MM-dd');
 
-  const handleAddTask = () => {
+  // Fetch user's existing items
+  const fetchUserItems = async () => {
+    if (!user) return;
+    
+    try {
+      const [habitsResult, activitiesResult, workoutsResult] = await Promise.all([
+        supabase.from('habits').select('id, name').eq('user_id', user.id).eq('is_active', true),
+        supabase.from('activities').select('id, name').eq('user_id', user.id),
+        supabase.from('workouts').select('id, name').eq('user_id', user.id)
+      ]);
+
+      if (habitsResult.data) setUserHabits(habitsResult.data);
+      if (activitiesResult.data) setUserActivities(activitiesResult.data);
+      if (workoutsResult.data) setUserWorkouts(workoutsResult.data);
+    } catch (error) {
+      console.error('Error fetching user items:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (open) {
+      fetchUserItems();
+    }
+  }, [open, user]);
+
+  const addToDailyPlan = async (itemType: string, title: string, itemId?: string) => {
+    if (!user) return;
+    
+    try {
+      setLoading(true);
+      
+      const { error } = await supabase
+        .from('daily_plans')
+        .insert({
+          user_id: user.id,
+          plan_date: today,
+          item_type: itemType,
+          item_id: itemId,
+          title: title,
+          completed: false,
+          order_index: 0
+        });
+
+      if (error) throw error;
+      
+      toast.success(`${title} added to today's plan!`);
+      onPlanAdded?.();
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error adding to daily plan:', error);
+      toast.error('Failed to add to plan');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddTask = async () => {
     if (taskTitle.trim()) {
-      console.log("Adding task:", taskTitle);
+      await addToDailyPlan('custom', taskTitle.trim());
       setTaskTitle("");
-      onOpenChange(false);
     }
   };
 
-  const handleAddActivity = (activity: string) => {
-    console.log("Adding activity:", activity);
-    onOpenChange(false);
+  const handleAddHabit = async (habit: UserHabit) => {
+    await addToDailyPlan('habit', habit.name, habit.id);
   };
 
-  const handleAddHabit = (habit: string) => {
-    console.log("Adding habit:", habit);
-    onOpenChange(false);
+  const handleAddActivity = async (activity: UserActivity) => {
+    await addToDailyPlan('activity', activity.name, activity.id);
   };
 
-  const handleAddWorkout = () => {
-    if (workoutName.trim()) {
-      console.log("Adding workout:", workoutName);
-      setWorkoutName("");
-      onOpenChange(false);
-    }
+  const handleAddWorkout = async (workout: UserWorkout) => {
+    await addToDailyPlan('workout', workout.name, workout.id);
   };
 
   return (
@@ -85,51 +149,73 @@ export const AddToPlanSheet = ({ open, onOpenChange }: AddToPlanSheetProps) => {
           </TabsContent>
           
           <TabsContent value="activity" className="space-y-4">
-            <Label>Choose an activity</Label>
-            <div className="grid grid-cols-2 gap-2">
-              {activities.map((activity) => (
-                <Badge
-                  key={activity}
-                  variant="outline"
-                  className="cursor-pointer hover:bg-primary hover:text-primary-foreground p-3 justify-center"
-                  onClick={() => handleAddActivity(activity)}
-                >
-                  {activity}
-                </Badge>
-              ))}
-            </div>
+            <Label>Choose an activity from your collection</Label>
+            {userActivities.length > 0 ? (
+              <div className="grid grid-cols-2 gap-2">
+                {userActivities.map((activity) => (
+                  <Badge
+                    key={activity.id}
+                    variant="outline"
+                    className="cursor-pointer hover:bg-primary hover:text-primary-foreground p-3 justify-center"
+                    onClick={() => handleAddActivity(activity)}
+                  >
+                    {activity.name}
+                  </Badge>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <p className="mb-2">No activities created yet</p>
+                <p className="text-sm">Create activities in the Planning page first</p>
+              </div>
+            )}
           </TabsContent>
           
           <TabsContent value="habit" className="space-y-4">
-            <Label>Start a new habit</Label>
-            <div className="grid grid-cols-2 gap-2">
-              {habits.map((habit) => (
-                <Badge
-                  key={habit}
-                  variant="outline"
-                  className="cursor-pointer hover:bg-primary hover:text-primary-foreground p-3 justify-center"
-                  onClick={() => handleAddHabit(habit)}
-                >
-                  {habit}
-                </Badge>
-              ))}
-            </div>
+            <Label>Add a habit to today's plan</Label>
+            {userHabits.length > 0 ? (
+              <div className="grid grid-cols-2 gap-2">
+                {userHabits.map((habit) => (
+                  <Badge
+                    key={habit.id}
+                    variant="outline"
+                    className="cursor-pointer hover:bg-primary hover:text-primary-foreground p-3 justify-center"
+                    onClick={() => handleAddHabit(habit)}
+                  >
+                    {habit.name}
+                  </Badge>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <p className="mb-2">No habits created yet</p>
+                <p className="text-sm">Create habits in the Planning page first</p>
+              </div>
+            )}
           </TabsContent>
           
           <TabsContent value="workout" className="space-y-4">
-            <div>
-              <Label htmlFor="workout-name">Workout name</Label>
-              <Input
-                id="workout-name"
-                placeholder="e.g., Upper body routine"
-                value={workoutName}
-                onChange={(e) => setWorkoutName(e.target.value)}
-                className="mt-2"
-              />
-            </div>
-            <Button onClick={handleAddWorkout} className="w-full" disabled={!workoutName.trim()}>
-              Schedule Workout
-            </Button>
+            <Label>Select a workout to schedule</Label>
+            {userWorkouts.length > 0 ? (
+              <div className="space-y-2">
+                {userWorkouts.map((workout) => (
+                  <Button
+                    key={workout.id}
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => handleAddWorkout(workout)}
+                    disabled={loading}
+                  >
+                    {workout.name}
+                  </Button>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <p className="mb-2">No workouts created yet</p>
+                <p className="text-sm">Create workouts in the Planning page first</p>
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </SheetContent>

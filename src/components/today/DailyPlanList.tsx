@@ -1,60 +1,177 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, Clock, Target } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { format } from "date-fns";
 
-interface PlanItem {
+interface DailyPlanItem {
   id: string;
   title: string;
-  type: "goal" | "plan";
+  description?: string;
+  item_type: "habit" | "goal" | "task" | "activity" | "workout" | "custom";
+  item_id?: string;
   completed: boolean;
-  time?: string;
+  completed_at?: string;
+  order_index: number;
   priority?: "low" | "medium" | "high";
 }
 
-const mockGoals: PlanItem[] = [
-  { id: "g1", title: "Finish presentation slides", type: "goal", completed: false, priority: "high" },
-  { id: "g2", title: "Exercise for 30 minutes", type: "goal", completed: false },
-  { id: "g3", title: "Read 20 pages", type: "goal", completed: true },
-];
-
-const mockPlanItems: PlanItem[] = [
-  { id: "p1", title: "Morning journal", type: "plan", completed: false, time: "7:00 AM" },
-  { id: "p2", title: "Team standup", type: "plan", completed: true, time: "9:00 AM" },
-  { id: "p3", title: "Work on presentation", type: "plan", completed: false, time: "10:00 AM" },
-  { id: "p4", title: "Lunch break", type: "plan", completed: false, time: "12:30 PM" },
-  { id: "p5", title: "Client call", type: "plan", completed: false, time: "2:00 PM", priority: "high" },
-  { id: "p6", title: "Gym workout", type: "plan", completed: false, time: "6:00 PM" },
-  { id: "p7", title: "Evening reading", type: "plan", completed: false, time: "8:00 PM" },
-];
-
 export const DailyPlanList = () => {
-  const [goals, setGoals] = useState(mockGoals);
-  const [planItems, setPlanItems] = useState(mockPlanItems);
+  const [dailyPlans, setDailyPlans] = useState<DailyPlanItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  const today = format(new Date(), 'yyyy-MM-dd');
 
-  const toggleComplete = (id: string, type: "goal" | "plan") => {
-    if (type === "goal") {
-      setGoals(items => 
-        items.map(item => 
-          item.id === id ? { ...item, completed: !item.completed } : item
-        )
-      );
-    } else {
-      setPlanItems(items => 
-        items.map(item => 
-          item.id === id ? { ...item, completed: !item.completed } : item
-        )
-      );
+  // Fetch daily plans for today
+  const fetchDailyPlans = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('daily_plans')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('plan_date', today)
+        .order('order_index', { ascending: true });
+
+      if (error) throw error;
+      
+      // Type cast the data to match our interface
+      const typedData = (data || []).map(item => ({
+        ...item,
+        item_type: item.item_type as DailyPlanItem['item_type']
+      }));
+      
+      setDailyPlans(typedData);
+    } catch (error) {
+      console.error('Error fetching daily plans:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const allItems = [...goals, ...planItems];
-  const completedCount = allItems.filter(item => item.completed).length;
-  const totalCount = allItems.length;
+  useEffect(() => {
+    fetchDailyPlans();
+  }, [user]);
 
-  const renderItem = (item: PlanItem) => (
+  const toggleComplete = async (id: string) => {
+    try {
+      const item = dailyPlans.find(p => p.id === id);
+      if (!item) return;
+
+      const newCompleted = !item.completed;
+      const updateData = {
+        completed: newCompleted,
+        completed_at: newCompleted ? new Date().toISOString() : null
+      };
+
+      const { error } = await supabase
+        .from('daily_plans')
+        .update(updateData)
+        .eq('id', id);
+
+      if (error) throw error;
+
+      // Update local state
+      setDailyPlans(items => 
+        items.map(item => 
+          item.id === id 
+            ? { ...item, completed: newCompleted, completed_at: updateData.completed_at }
+            : item
+        )
+      );
+
+      // Update source records based on item type
+      if (newCompleted && item.item_id) {
+        await updateSourceRecord(item.item_type, item.item_id);
+      }
+    } catch (error) {
+      console.error('Error updating daily plan:', error);
+    }
+  };
+
+  const updateSourceRecord = async (itemType: string, itemId: string) => {
+    try {
+      switch (itemType) {
+        case 'habit':
+          // Create habit completion record
+          await supabase
+            .from('habit_completions')
+            .insert({
+              user_id: user!.id,
+              habit_id: itemId,
+              completion_date: today,
+              completed_at: new Date().toISOString()
+            });
+          break;
+        case 'task':
+          // Mark task as completed
+          await supabase
+            .from('tasks')
+            .update({ 
+              completed: true, 
+              completed_at: new Date().toISOString() 
+            })
+            .eq('id', itemId);
+          break;
+        case 'workout':
+          // Mark workout plan as completed
+          await supabase
+            .from('workout_plans')
+            .update({ 
+              completed: true, 
+              completed_at: new Date().toISOString() 
+            })
+            .eq('workout_id', itemId)
+            .eq('scheduled_date', today);
+          break;
+      }
+    } catch (error) {
+      console.error('Error updating source record:', error);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Card className="p-6">
+        <div className="animate-pulse space-y-4">
+          <div className="h-4 bg-muted rounded w-1/3"></div>
+          <div className="h-4 bg-muted rounded w-1/4"></div>
+          <div className="space-y-3">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="h-12 bg-muted rounded"></div>
+            ))}
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
+  const completedCount = dailyPlans.filter(item => item.completed).length;
+  const totalCount = dailyPlans.length;
+
+  if (totalCount === 0) {
+    return (
+      <Card className="p-6">
+        <div className="text-center py-8">
+          <div className="text-4xl mb-4">📋</div>
+          <h3 className="text-lg font-semibold text-foreground mb-2">No plans for today</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            Start by adding some items to your daily plan
+          </p>
+        </div>
+      </Card>
+    );
+  }
+
+  const goalItems = dailyPlans.filter(item => item.item_type === 'goal');
+  const scheduleItems = dailyPlans.filter(item => item.item_type !== 'goal');
+
+  const renderItem = (item: DailyPlanItem) => (
     <div
       key={item.id}
       className={cn(
@@ -73,7 +190,7 @@ export const DailyPlanList = () => {
             ? "bg-primary border-primary text-primary-foreground"
             : "border-muted hover:border-primary"
         )}
-        onClick={() => toggleComplete(item.id, item.type)}
+        onClick={() => toggleComplete(item.id)}
       >
         {item.completed && <Check className="w-3 h-3" />}
       </Button>
@@ -86,13 +203,19 @@ export const DailyPlanList = () => {
           {item.title}
         </div>
         
+        {item.description && (
+          <div className="text-sm text-muted-foreground mt-1">
+            {item.description}
+          </div>
+        )}
+        
         <div className="flex items-center gap-2 mt-1">
-          {item.time && (
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Clock className="w-3 h-3" />
-              {item.time}
-            </div>
-          )}
+          <Badge 
+            variant="outline"
+            className="text-xs px-2 py-0 capitalize"
+          >
+            {item.item_type === 'custom' ? 'task' : item.item_type}
+          </Badge>
           {item.priority && (
             <Badge 
               variant={item.priority === "high" ? "destructive" : "secondary"}
@@ -121,28 +244,32 @@ export const DailyPlanList = () => {
 
       <div className="space-y-6">
         {/* Goals Section */}
-        <div>
-          <div className="flex items-center gap-2 mb-3">
-            <Target className="w-5 h-5 text-primary" />
-            <h4 className="font-medium text-foreground">Today's Goals</h4>
+        {goalItems.length > 0 && (
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <Target className="w-5 h-5 text-primary" />
+              <h4 className="font-medium text-foreground">Today's Goals</h4>
+            </div>
+            
+            <div className="space-y-2">
+              {goalItems.map(renderItem)}
+            </div>
           </div>
-          
-          <div className="space-y-2">
-            {goals.map(renderItem)}
-          </div>
-        </div>
+        )}
 
-        {/* Daily Plan Section */}
-        <div>
-          <div className="flex items-center gap-2 mb-3">
-            <Clock className="w-5 h-5 text-primary" />
-            <h4 className="font-medium text-foreground">Daily Schedule</h4>
+        {/* Daily Schedule Section */}
+        {scheduleItems.length > 0 && (
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <Clock className="w-5 h-5 text-primary" />
+              <h4 className="font-medium text-foreground">Daily Schedule</h4>
+            </div>
+            
+            <div className="space-y-2">
+              {scheduleItems.map(renderItem)}
+            </div>
           </div>
-          
-          <div className="space-y-2">
-            {planItems.map(renderItem)}
-          </div>
-        </div>
+        )}
       </div>
     </Card>
   );

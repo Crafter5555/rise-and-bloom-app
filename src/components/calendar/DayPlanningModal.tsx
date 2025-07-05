@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -11,6 +11,9 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { X, Plus, Target, Clock, Calendar } from "lucide-react";
 import { format } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 interface DayPlanningModalProps {
   isOpen: boolean;
@@ -20,7 +23,10 @@ interface DayPlanningModalProps {
 }
 
 export const DayPlanningModal = ({ isOpen, onClose, selectedDate, onSavePlan }: DayPlanningModalProps) => {
+  const { user } = useAuth();
   const dateString = format(selectedDate, "EEEE, MMMM d, yyyy");
+  const planDate = format(selectedDate, 'yyyy-MM-dd');
+  const [saving, setSaving] = useState(false);
   
   const [tasks, setTasks] = useState([
     { id: 1, title: "", category: "work", priority: "medium", timeEstimate: "" }
@@ -69,18 +75,80 @@ export const DayPlanningModal = ({ isOpen, onClose, selectedDate, onSavePlan }: 
     setGoals(goals.filter((_, i) => i !== index));
   };
 
-  const handleSave = () => {
-    const planData = {
-      date: selectedDate,
-      tasks: tasks.filter(task => task.title.trim()),
-      goals: goals.filter(goal => goal.trim()),
-      intention,
-      notes,
-      focusTime,
-      habits
-    };
-    onSavePlan(planData);
-    onClose();
+  const handleSave = async () => {
+    if (!user) return;
+    
+    try {
+      setSaving(true);
+      
+      const planItems = [];
+      let orderIndex = 0;
+      
+      // Add tasks to daily plans
+      for (const task of tasks.filter(task => task.title.trim())) {
+        planItems.push({
+          user_id: user.id,
+          plan_date: planDate,
+          item_type: 'custom',
+          title: task.title.trim(),
+          description: `${task.category} - ${task.priority} priority${task.timeEstimate ? ` (${task.timeEstimate})` : ''}`,
+          completed: false,
+          order_index: orderIndex++
+        });
+      }
+      
+      // Add goals to daily plans
+      for (const goal of goals.filter(goal => goal.trim())) {
+        planItems.push({
+          user_id: user.id,
+          plan_date: planDate,
+          item_type: 'goal',
+          title: goal.trim(),
+          description: intention.trim() || undefined,
+          completed: false,
+          order_index: orderIndex++
+        });
+      }
+      
+      // Add selected habits to daily plans
+      for (const [habitKey, selected] of Object.entries(habits)) {
+        if (selected) {
+          const habitTitle = {
+            morningPlanning: '☀️ Morning Planning',
+            exercise: '💪 Exercise', 
+            journaling: '📝 Journaling',
+            meditation: '🧘 Meditation',
+            eveningReflection: '🌙 Evening Reflection'
+          }[habitKey] || habitKey;
+          
+          planItems.push({
+            user_id: user.id,
+            plan_date: planDate,
+            item_type: 'habit',
+            title: habitTitle,
+            completed: false,
+            order_index: orderIndex++
+          });
+        }
+      }
+      
+      if (planItems.length > 0) {
+        const { error } = await supabase
+          .from('daily_plans')
+          .insert(planItems);
+          
+        if (error) throw error;
+      }
+      
+      toast.success('Day plan saved successfully!');
+      onSavePlan({ date: selectedDate, itemsAdded: planItems.length });
+      onClose();
+    } catch (error) {
+      console.error('Error saving plan:', error);
+      toast.error('Failed to save plan');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const getCategoryColor = (category: string) => {
