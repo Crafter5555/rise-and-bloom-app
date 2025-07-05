@@ -10,6 +10,7 @@ import { AddTaskDialog } from "@/components/dialogs/AddTaskDialog";
 import { AddActivityDialog } from "@/components/dialogs/AddActivityDialog";
 import { AddWorkoutDialog } from "@/components/dialogs/AddWorkoutDialog";
 import { AddRoutineDialog } from "@/components/dialogs/AddRoutineDialog";
+import { UniversalScheduleModal } from "@/components/scheduling/UniversalScheduleModal";
 import { HabitsList } from "@/components/planning/HabitsList";
 import { GoalsList } from "@/components/planning/GoalsList";
 import { TasksList } from "@/components/planning/TasksList";
@@ -33,6 +34,10 @@ const Planning = () => {
   const [showActivityDialog, setShowActivityDialog] = useState(false);
   const [showWorkoutDialog, setShowWorkoutDialog] = useState(false);
   const [showRoutineDialog, setShowRoutineDialog] = useState(false);
+  
+  // Universal scheduling state
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [selectedItemToSchedule, setSelectedItemToSchedule] = useState<any>(null);
   
   // Metrics state
   const [metrics, setMetrics] = useState({
@@ -129,6 +134,34 @@ const Planning = () => {
 
   const handleDataUpdate = () => {
     fetchMetrics();
+  };
+
+  // Universal scheduling handlers
+  const handleScheduleTask = (task: any) => {
+    setSelectedItemToSchedule({ ...task, type: 'task' });
+    setShowScheduleModal(true);
+  };
+
+  const handleScheduleHabit = (habit: any) => {
+    setSelectedItemToSchedule({ ...habit, type: 'habit' });
+    setShowScheduleModal(true);
+  };
+
+  const handleScheduleActivity = (activity: any) => {
+    setSelectedItemToSchedule({ ...activity, type: 'activity' });
+    setShowScheduleModal(true);
+  };
+
+  const handleScheduleWorkout = (workout: any) => {
+    setSelectedItemToSchedule({ ...workout, type: 'workout' });
+    setShowScheduleModal(true);
+  };
+
+  const handleScheduled = () => {
+    // Refresh data and close modal
+    handleDataUpdate();
+    setShowScheduleModal(false);
+    setSelectedItemToSchedule(null);
   };
 
   const getDayDisplayName = (date: Date) => {
@@ -290,7 +323,7 @@ const Planning = () => {
                 Add Habit
               </Button>
             </div>
-            <HabitsList onRefresh={handleDataUpdate} />
+            <HabitsList onRefresh={handleDataUpdate} onScheduleHabit={handleScheduleHabit} />
           </TabsContent>
           
           <TabsContent value="goals" className="mt-4">
@@ -312,7 +345,7 @@ const Planning = () => {
                 Add Task
               </Button>
             </div>
-            <TasksList onRefresh={handleDataUpdate} />
+            <TasksList onRefresh={handleDataUpdate} onScheduleTask={handleScheduleTask} />
           </TabsContent>
           
           <TabsContent value="activities" className="mt-4">
@@ -323,7 +356,7 @@ const Planning = () => {
                 Add Activity
               </Button>
             </div>
-            <ActivitiesList onRefresh={handleDataUpdate} />
+            <ActivitiesList onRefresh={handleDataUpdate} onScheduleActivity={handleScheduleActivity} />
           </TabsContent>
           
           <TabsContent value="workouts" className="mt-4">
@@ -337,7 +370,7 @@ const Planning = () => {
                     Add Workout
                   </Button>
                 </div>
-                <WorkoutsList onRefresh={handleDataUpdate} />
+                <WorkoutsList onRefresh={handleDataUpdate} onScheduleWorkout={handleScheduleWorkout} />
               </div>
               
               {/* Workout Routines Section */}
@@ -471,6 +504,14 @@ const Planning = () => {
         open={showRoutineDialog} 
         onOpenChange={setShowRoutineDialog}
         onRoutineAdded={handleDataUpdate}
+      />
+
+      {/* Universal Schedule Modal */}
+      <UniversalScheduleModal
+        open={showScheduleModal}
+        onOpenChange={setShowScheduleModal}
+        item={selectedItemToSchedule}
+        onScheduled={handleScheduled}
       />
     </div>
   );

@@ -6,9 +6,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CalendarIcon, Clock } from "lucide-react";
+import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 interface AddActivityDialogProps {
   open: boolean;
@@ -24,6 +29,10 @@ export const AddActivityDialog = ({ open, onOpenChange, onActivityAdded }: AddAc
   const [isFavorite, setIsFavorite] = useState(false);
   const [loading, setLoading] = useState(false);
   
+  // Optional scheduling fields
+  const [scheduleDate, setScheduleDate] = useState<Date | undefined>(undefined);
+  const [scheduledTime, setScheduledTime] = useState("");
+  
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -33,7 +42,8 @@ export const AddActivityDialog = ({ open, onOpenChange, onActivityAdded }: AddAc
     setLoading(true);
     
     try {
-      const { error } = await supabase
+      // Create the activity first
+      const { data: activityData, error: activityError } = await supabase
         .from('activities')
         .insert({
           user_id: user.id,
@@ -42,13 +52,32 @@ export const AddActivityDialog = ({ open, onOpenChange, onActivityAdded }: AddAc
           category,
           duration_minutes: durationMinutes,
           is_favorite: isFavorite
-        });
+        })
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (activityError) throw activityError;
+
+      // If user wants to schedule the activity, create daily plan entry
+      if (scheduleDate && activityData) {
+        await supabase
+          .from('daily_plans')
+          .insert({
+            user_id: user.id,
+            plan_date: format(scheduleDate, 'yyyy-MM-dd'),
+            item_type: 'activity',
+            item_id: activityData.id,
+            title: name.trim(),
+            scheduled_time: scheduledTime || null,
+            estimated_duration_minutes: durationMinutes
+          });
+      }
 
       toast({
         title: "Success",
-        description: "Activity created successfully!"
+        description: scheduleDate 
+          ? `Activity created and scheduled for ${format(scheduleDate, 'PPP')}!`
+          : "Activity created successfully!"
       });
 
       // Reset form
@@ -57,6 +86,8 @@ export const AddActivityDialog = ({ open, onOpenChange, onActivityAdded }: AddAc
       setCategory("general");
       setDurationMinutes(30);
       setIsFavorite(false);
+      setScheduleDate(undefined);
+      setScheduledTime("");
       
       onActivityAdded?.();
       onOpenChange(false);
@@ -139,6 +170,52 @@ export const AddActivityDialog = ({ open, onOpenChange, onActivityAdded }: AddAc
               checked={isFavorite}
               onCheckedChange={setIsFavorite}
             />
+          </div>
+
+          {/* Optional Scheduling Section */}
+          <div className="space-y-4 border-t pt-4">
+            <h4 className="font-medium text-foreground">Schedule Activity (Optional)</h4>
+            
+            <div className="space-y-2">
+              <Label>Schedule Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !scheduleDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {scheduleDate ? format(scheduleDate, "PPP") : "Pick a date (optional)"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={scheduleDate}
+                    onSelect={setScheduleDate}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {scheduleDate && (
+              <div className="space-y-2">
+                <Label htmlFor="activity-scheduled-time">
+                  <Clock className="w-4 h-4 inline mr-1" />
+                  Time (optional)
+                </Label>
+                <Input
+                  id="activity-scheduled-time"
+                  type="time"
+                  value={scheduledTime}
+                  onChange={(e) => setScheduledTime(e.target.value)}
+                />
+              </div>
+            )}
           </div>
         </div>
 

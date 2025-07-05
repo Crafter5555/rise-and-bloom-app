@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { CheckCircle2, Circle, Edit2, Trash2 } from "lucide-react";
+import { CheckCircle2, Circle, Edit2, Trash2, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -21,9 +21,10 @@ interface Habit {
 
 interface HabitsListProps {
   onRefresh?: () => void;
+  onScheduleHabit?: (habit: Habit) => void;
 }
 
-export const HabitsList = ({ onRefresh }: HabitsListProps) => {
+export const HabitsList = ({ onRefresh, onScheduleHabit }: HabitsListProps) => {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
@@ -161,6 +162,15 @@ export const HabitsList = ({ onRefresh }: HabitsListProps) => {
             </div>
             
             <div className="flex items-center gap-2 ml-4">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="text-primary"
+                onClick={() => onScheduleHabit?.(habit)}
+              >
+                <Calendar className="w-4 h-4 mr-1" />
+                Schedule
+              </Button>
               <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
                 <Edit2 className="w-4 h-4" />
               </Button>

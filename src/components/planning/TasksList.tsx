@@ -22,9 +22,10 @@ interface Task {
 
 interface TasksListProps {
   onRefresh?: () => void;
+  onScheduleTask?: (task: Task) => void;
 }
 
-export const TasksList = ({ onRefresh }: TasksListProps) => {
+export const TasksList = ({ onRefresh, onScheduleTask }: TasksListProps) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('all');
@@ -226,6 +227,15 @@ export const TasksList = ({ onRefresh }: TasksListProps) => {
                 </div>
                 
                 <div className="flex items-center gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="text-primary"
+                    onClick={() => onScheduleTask?.(task)}
+                  >
+                    <Calendar className="w-4 h-4 mr-1" />
+                    Schedule
+                  </Button>
                   <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
                     <Edit2 className="w-4 h-4" />
                   </Button>

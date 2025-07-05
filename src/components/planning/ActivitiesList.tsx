@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart, Edit2, Trash2, Activity, Clock } from "lucide-react";
+import { Heart, Edit2, Trash2, Activity, Clock, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -20,9 +20,10 @@ interface ActivityItem {
 
 interface ActivitiesListProps {
   onRefresh?: () => void;
+  onScheduleActivity?: (activity: ActivityItem) => void;
 }
 
-export const ActivitiesList = ({ onRefresh }: ActivitiesListProps) => {
+export const ActivitiesList = ({ onRefresh, onScheduleActivity }: ActivitiesListProps) => {
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');
@@ -190,6 +191,15 @@ export const ActivitiesList = ({ onRefresh }: ActivitiesListProps) => {
                 </div>
                 
                 <div className="flex items-center gap-2 ml-4">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="text-primary"
+                    onClick={() => onScheduleActivity?.(activity)}
+                  >
+                    <Calendar className="w-4 h-4 mr-1" />
+                    Schedule
+                  </Button>
                   <Button 
                     variant="ghost" 
                     size="sm" 

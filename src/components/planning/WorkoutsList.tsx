@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit2, Trash2, Dumbbell, Clock } from "lucide-react";
+import { Edit2, Trash2, Dumbbell, Clock, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -19,9 +19,10 @@ interface Workout {
 
 interface WorkoutsListProps {
   onRefresh?: () => void;
+  onScheduleWorkout?: (workout: Workout) => void;
 }
 
-export const WorkoutsList = ({ onRefresh }: WorkoutsListProps) => {
+export const WorkoutsList = ({ onRefresh, onScheduleWorkout }: WorkoutsListProps) => {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
@@ -142,6 +143,15 @@ export const WorkoutsList = ({ onRefresh }: WorkoutsListProps) => {
             </div>
             
             <div className="flex items-center gap-2 ml-4">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="text-primary"
+                onClick={() => onScheduleWorkout?.(workout)}
+              >
+                <Calendar className="w-4 h-4 mr-1" />
+                Schedule
+              </Button>
               <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
                 <Edit2 className="w-4 h-4" />
               </Button>
