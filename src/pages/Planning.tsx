@@ -80,6 +80,44 @@ const Planning = () => {
         />
       </div>
 
+      {/* Quick Access Section */}
+      <div className="mb-6">
+        <h3 className="text-lg font-semibold text-foreground mb-4">Quick Access</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <Card className="p-6 shadow-soft">
+            <div className="text-center">
+              <div className="text-3xl mb-2">🔄</div>
+              <h4 className="font-semibold text-foreground mb-1">Habits</h4>
+              <p className="text-xs text-muted-foreground mb-2">0 active</p>
+            </div>
+          </Card>
+          
+          <Card className="p-6 shadow-soft">
+            <div className="text-center">
+              <div className="text-3xl mb-2">🎯</div>
+              <h4 className="font-semibold text-foreground mb-1">Goals</h4>
+              <p className="text-xs text-muted-foreground mb-2">0 total</p>
+            </div>
+          </Card>
+          
+          <Card className="p-6 shadow-soft">
+            <div className="text-center">
+              <div className="text-3xl mb-2">📋</div>
+              <h4 className="font-semibold text-foreground mb-1">Tasks</h4>
+              <p className="text-xs text-muted-foreground mb-2">1 daily</p>
+            </div>
+          </Card>
+          
+          <Card className="p-6 shadow-soft">
+            <div className="text-center">
+              <div className="text-3xl mb-2">⚡</div>
+              <h4 className="font-semibold text-foreground mb-1">Activities</h4>
+              <p className="text-xs text-muted-foreground mb-2">1 saved</p>
+            </div>
+          </Card>
+        </div>
+      </div>
+
       {/* Plan Future Days */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
@@ -142,44 +180,6 @@ const Planning = () => {
             Plan your upcoming days by clicking on any day above. Set tasks, goals, and habits to stay organized and focused.
           </p>
         </Card>
-      </div>
-
-      {/* Quick Access Section */}
-      <div className="mb-6">
-        <h3 className="text-lg font-semibold text-foreground mb-4">Quick Access</h3>
-        <div className="grid grid-cols-2 gap-4">
-          <Card className="p-6 shadow-soft">
-            <div className="text-center">
-              <div className="text-3xl mb-2">🔄</div>
-              <h4 className="font-semibold text-foreground mb-1">Habits</h4>
-              <p className="text-xs text-muted-foreground mb-2">0 active</p>
-            </div>
-          </Card>
-          
-          <Card className="p-6 shadow-soft">
-            <div className="text-center">
-              <div className="text-3xl mb-2">🎯</div>
-              <h4 className="font-semibold text-foreground mb-1">Goals</h4>
-              <p className="text-xs text-muted-foreground mb-2">0 total</p>
-            </div>
-          </Card>
-          
-          <Card className="p-6 shadow-soft">
-            <div className="text-center">
-              <div className="text-3xl mb-2">📋</div>
-              <h4 className="font-semibold text-foreground mb-1">Tasks</h4>
-              <p className="text-xs text-muted-foreground mb-2">1 daily</p>
-            </div>
-          </Card>
-          
-          <Card className="p-6 shadow-soft">
-            <div className="text-center">
-              <div className="text-3xl mb-2">⚡</div>
-              <h4 className="font-semibold text-foreground mb-1">Activities</h4>
-              <p className="text-xs text-muted-foreground mb-2">1 saved</p>
-            </div>
-          </Card>
-        </div>
       </div>
 
       {/* Day Planning Modal */}
