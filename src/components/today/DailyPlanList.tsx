@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
+import { EditTaskDialog } from "@/components/dialogs/EditTaskDialog";
 
 interface DailyPlanItem {
   id: string;
@@ -26,6 +27,8 @@ interface DailyPlanItem {
 export const DailyPlanList = () => {
   const [dailyPlans, setDailyPlans] = useState<DailyPlanItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingTask, setEditingTask] = useState<any>(null);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const { user } = useAuth();
   const today = format(new Date(), 'yyyy-MM-dd');
 
@@ -150,6 +153,32 @@ export const DailyPlanList = () => {
     }
   };
 
+  // Handle clicking on task items to edit them
+  const handleTaskClick = async (item: DailyPlanItem) => {
+    if (item.item_type === 'task' && item.item_id && !item.completed) {
+      try {
+        const { data: taskData, error } = await supabase
+          .from('tasks')
+          .select('*')
+          .eq('id', item.item_id)
+          .single();
+
+        if (error) throw error;
+        
+        setEditingTask(taskData);
+        setShowEditDialog(true);
+      } catch (error) {
+        console.error('Error fetching task:', error);
+      }
+    }
+  };
+
+  const handleTaskUpdated = () => {
+    fetchDailyPlans();
+    setShowEditDialog(false);
+    setEditingTask(null);
+  };
+
   if (loading) {
     return (
       <Card className="p-6">
@@ -193,8 +222,10 @@ export const DailyPlanList = () => {
         "flex items-center gap-3 p-3 rounded-lg border transition-all",
         item.completed 
           ? "bg-muted/50 border-muted" 
-          : "bg-background border-border hover:border-primary/20"
+          : "bg-background border-border hover:border-primary/20",
+        item.item_type === 'task' && !item.completed && "cursor-pointer"
       )}
+      onClick={() => handleTaskClick(item)}
     >
       <Button
         variant="ghost"
@@ -205,7 +236,10 @@ export const DailyPlanList = () => {
             ? "bg-primary border-primary text-primary-foreground"
             : "border-muted hover:border-primary"
         )}
-        onClick={() => toggleComplete(item.id)}
+        onClick={(e) => {
+          e.stopPropagation();
+          toggleComplete(item.id);
+        }}
       >
         {item.completed && <Check className="w-3 h-3" />}
       </Button>
@@ -216,6 +250,9 @@ export const DailyPlanList = () => {
           item.completed ? "line-through text-muted-foreground" : "text-foreground"
         )}>
           {item.title}
+          {item.item_type === 'task' && !item.completed && (
+            <span className="text-xs text-muted-foreground ml-2">(click to edit)</span>
+          )}
         </div>
         
         {item.description && (
@@ -318,6 +355,14 @@ export const DailyPlanList = () => {
           </div>
         )}
       </div>
+
+      {/* Edit Task Dialog */}
+      <EditTaskDialog
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        task={editingTask}
+        onTaskUpdated={handleTaskUpdated}
+      />
     </Card>
   );
 };
