@@ -53,7 +53,7 @@ const Planning = () => {
       </div>
 
       {/* Metrics Grid */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-2 gap-4 mb-4">
         <MetricCard
           icon="🎯"
           title="Active Goals"
