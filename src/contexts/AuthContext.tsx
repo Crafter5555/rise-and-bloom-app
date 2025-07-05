@@ -1,6 +1,8 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js'
 import { supabase } from '@/integrations/supabase/client';
+import { cleanupAuthState, performSecureSignOut } from '@/utils/authCleanup';
 
 interface AuthContextType {
   user: User | null;
@@ -9,6 +11,8 @@ interface AuthContextType {
   signUp: (email: string, password: string, username: string, displayName?: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
+  updateProfile: (data: { username?: string; display_name?: string }) => Promise<{ error: any }>;
+  updatePassword: (newPassword: string) => Promise<{ error: any }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -27,11 +31,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Set up auth state listener
+    // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state changed:', event);
         setSession(session);
         setUser(session?.user ?? null);
+        
+        // Handle sign out events
+        if (event === 'SIGNED_OUT') {
+          cleanupAuthState();
+        }
+        
         setLoading(false);
       }
     );
@@ -47,32 +58,54 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signUp = async (email: string, password: string, username: string, displayName?: string) => {
-    const redirectUrl = `${window.location.origin}/`;
-    
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: {
-          username,
-          display_name: displayName || username,
+    try {
+      // Clean up any existing auth state
+      cleanupAuthState();
+      
+      const redirectUrl = `${window.location.origin}/`;
+      
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            username,
+            display_name: displayName || username,
+          }
         }
-      }
-    });
-    return { error };
+      });
+      
+      return { error };
+    } catch (error) {
+      return { error };
+    }
   };
 
   const signIn = async (email: string, password: string) => {
     try {
+      // Clean up existing state
+      cleanupAuthState();
+      
+      // Attempt global sign out first
+      try {
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch (err) {
+        // Continue even if this fails
+      }
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
+      
       if (error) throw error;
+      
       if (data.user) {
+        // Force page reload for clean state
         window.location.href = '/';
       }
+      
       return { error: null };
     } catch (error) {
       return { error };
@@ -80,11 +113,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
+    await performSecureSignOut(supabase);
+  };
+
+  const updateProfile = async (data: { username?: string; display_name?: string }) => {
     try {
-      await supabase.auth.signOut({ scope: 'global' });
-      window.location.href = '/auth';
+      const { error } = await supabase.auth.updateUser({
+        data
+      });
+
+      if (error) throw error;
+
+      // Update profile in database
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update(data)
+        .eq('user_id', user?.id);
+
+      return { error: profileError };
     } catch (error) {
-      console.error('Error signing out:', error);
+      return { error };
+    }
+  };
+
+  const updatePassword = async (newPassword: string) => {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+      return { error };
+    } catch (error) {
+      return { error };
     }
   };
 
@@ -95,6 +154,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signUp,
     signIn,
     signOut,
+    updateProfile,
+    updatePassword,
   };
 
   return (

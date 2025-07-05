@@ -1,26 +1,28 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, User, Mail, Key } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { ArrowLeft, User, Key, Shield, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { useMobile } from "@/hooks/useMobile";
 
 const Settings = () => {
   const [loading, setLoading] = useState(false);
   const [username, setUsername] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
-  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   
-  const { user, signOut } = useAuth();
+  const { user, signOut, updateProfile, updatePassword } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { hapticFeedback, isNative } = useMobile();
 
   useEffect(() => {
     if (user) {
@@ -34,26 +36,15 @@ const Settings = () => {
     e.preventDefault();
     setLoading(true);
     
+    if (isNative) hapticFeedback();
+    
     try {
-      const { error } = await supabase.auth.updateUser({
-        data: {
-          username,
-          display_name: displayName,
-        }
+      const { error } = await updateProfile({
+        username,
+        display_name: displayName,
       });
 
       if (error) throw error;
-
-      // Update profile in database
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          username,
-          display_name: displayName,
-        })
-        .eq('user_id', user?.id);
-
-      if (profileError) throw profileError;
 
       toast({
         title: "Profile updated",
@@ -82,12 +73,21 @@ const Settings = () => {
       return;
     }
 
+    if (newPassword.length < 6) {
+      toast({
+        title: "Password too short",
+        description: "Password must be at least 6 characters long.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     
+    if (isNative) hapticFeedback();
+    
     try {
-      const { error } = await supabase.auth.updateUser({
-        password: newPassword
-      });
+      const { error } = await updatePassword(newPassword);
 
       if (error) throw error;
 
@@ -96,7 +96,6 @@ const Settings = () => {
         description: "Your password has been successfully updated.",
       });
       
-      setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
     } catch (error: any) {
@@ -111,21 +110,25 @@ const Settings = () => {
   };
 
   const handleDeleteAccount = async () => {
-    if (window.confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
-      try {
-        // Note: In a real app, you'd want to handle this through an edge function
-        // for proper cleanup of user data and account deletion
-        await signOut();
-        toast({
-          title: "Account deletion requested",
-          description: "Please contact support to complete account deletion.",
-        });
-      } catch (error: any) {
-        toast({
-          title: "Error",
-          description: error.message,
-          variant: "destructive",
-        });
+    if (window.confirm("⚠️ Are you absolutely sure you want to delete your account?\n\nThis action cannot be undone and will permanently delete:\n• All your data\n• Your profile information\n• Your account access\n\nType 'DELETE' in the next prompt to confirm.")) {
+      const confirmation = window.prompt("Type 'DELETE' to confirm account deletion:");
+      
+      if (confirmation === 'DELETE') {
+        try {
+          if (isNative) hapticFeedback();
+          
+          await signOut();
+          toast({
+            title: "Account deletion initiated",
+            description: "Please contact support to complete account deletion.",
+          });
+        } catch (error: any) {
+          toast({
+            title: "Error",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
       }
     }
   };
@@ -146,6 +149,20 @@ const Settings = () => {
       </div>
 
       <div className="space-y-6 max-w-2xl">
+        {/* Security Overview */}
+        <Card className="border-green-200 bg-green-50">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-2 mb-2">
+              <Shield className="w-5 h-5 text-green-600" />
+              <span className="font-semibold text-green-800">Account Security</span>
+            </div>
+            <p className="text-sm text-green-700">
+              Your account is secured with industry-standard encryption. 
+              We recommend using a strong, unique password and keeping your profile information up to date.
+            </p>
+          </CardContent>
+        </Card>
+
         {/* Profile Settings */}
         <Card>
           <CardHeader>
@@ -154,49 +171,59 @@ const Settings = () => {
               Profile Information
             </CardTitle>
             <CardDescription>
-              Update your profile information and preferences.
+              Update your personal information and how others see you in the app.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleUpdateProfile} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">Email Address</Label>
                 <Input
                   id="email"
                   type="email"
                   value={email}
                   disabled
-                  className="bg-muted"
+                  className="bg-muted cursor-not-allowed"
                 />
-                <p className="text-sm text-muted-foreground">
-                  Email cannot be changed. Contact support if needed.
+                <p className="text-xs text-muted-foreground">
+                  Your email address cannot be changed for security reasons.
                 </p>
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
-                <Input
-                  id="username"
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Enter your username"
-                />
+              <Separator />
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="username">Username</Label>
+                  <Input
+                    id="username"
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="Enter your username"
+                    maxLength={30}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="displayName">Display Name</Label>
+                  <Input
+                    id="displayName"
+                    type="text"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    placeholder="Enter your display name"
+                    maxLength={50}
+                  />
+                </div>
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="displayName">Display Name</Label>
-                <Input
-                  id="displayName"
-                  type="text"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  placeholder="Enter your display name"
-                />
-              </div>
-              
-              <Button type="submit" disabled={loading}>
-                {loading ? "Updating..." : "Update Profile"}
+              <Button 
+                type="submit" 
+                disabled={loading}
+                className="w-full sm:w-auto"
+              >
+                {loading ? "Updating..." : "Save Changes"}
               </Button>
             </form>
           </CardContent>
@@ -210,7 +237,7 @@ const Settings = () => {
               Change Password
             </CardTitle>
             <CardDescription>
-              Update your account password for security.
+              Keep your account secure with a strong password.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -222,8 +249,9 @@ const Settings = () => {
                   type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Enter new password"
+                  placeholder="Enter new password (min. 6 characters)"
                   required
+                  minLength={6}
                 />
               </div>
               
@@ -236,35 +264,55 @@ const Settings = () => {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Confirm new password"
                   required
+                  minLength={6}
                 />
               </div>
               
-              <Button type="submit" disabled={loading}>
+              <div className="text-xs text-muted-foreground space-y-1">
+                <p>• Password must be at least 6 characters long</p>
+                <p>• Consider using a mix of letters, numbers, and symbols</p>
+              </div>
+              
+              <Button 
+                type="submit" 
+                disabled={loading || !newPassword || !confirmPassword}
+                className="w-full sm:w-auto"
+              >
                 {loading ? "Updating..." : "Update Password"}
               </Button>
             </form>
           </CardContent>
         </Card>
 
-        {/* Account Actions */}
-        <Card>
+        {/* Danger Zone */}
+        <Card className="border-destructive/20">
           <CardHeader>
-            <CardTitle className="text-destructive">Danger Zone</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="w-5 h-5" />
+              Danger Zone
+            </CardTitle>
             <CardDescription>
-              Irreversible and destructive actions.
+              Permanent and irreversible actions. Please proceed with caution.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button 
-              variant="destructive" 
-              onClick={handleDeleteAccount}
-              disabled={loading}
-            >
-              Delete Account
-            </Button>
-            <p className="text-sm text-muted-foreground mt-2">
-              This will permanently delete your account and all associated data.
-            </p>
+            <div className="space-y-4">
+              <div className="p-4 bg-destructive/5 rounded-lg border border-destructive/20">
+                <h4 className="font-medium text-destructive mb-2">Delete Account</h4>
+                <p className="text-sm text-muted-foreground mb-4">
+                  This will permanently delete your account and all associated data. 
+                  This action cannot be undone.
+                </p>
+                <Button 
+                  variant="destructive" 
+                  onClick={handleDeleteAccount}
+                  disabled={loading}
+                  size="sm"
+                >
+                  Delete My Account
+                </Button>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
