@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, LogOut } from "lucide-react";
+import { Plus, LogOut, Settings } from "lucide-react";
 import { DailyPlanList } from "@/components/today/DailyPlanList";
 import { InsightsPanel } from "@/components/today/InsightsPanel";
 import { AIAssistantPanel } from "@/components/today/AIAssistantCard";
@@ -8,6 +8,7 @@ import { EveningCheckIn } from "@/components/today/EveningCheckIn";
 import { AddToPlanSheet } from "@/components/today/AddToPlanSheet";
 import { QuizReminder } from "@/components/today/QuizReminder";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const Today = () => {
   const [addToPlanOpen, setAddToPlanOpen] = useState(false);
@@ -16,6 +17,7 @@ const Today = () => {
   const [isEvening, setIsEvening] = useState(false);
   
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const currentDate = new Date();
   const dayName = currentDate.toLocaleDateString('en-US', { weekday: 'long' });
   const monthDay = currentDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
@@ -55,14 +57,24 @@ const Today = () => {
             {dayName}, {monthDay}
           </p>
         </div>
-        <Button 
-          variant="ghost" 
-          size="icon"
-          onClick={signOut}
-          className="text-muted-foreground hover:text-foreground"
-        >
-          <LogOut className="w-5 h-5" />
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => navigate('/settings')}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <Settings className="w-5 h-5" />
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={signOut}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <LogOut className="w-5 h-5" />
+          </Button>
+        </div>
       </div>
 
       {/* Quiz Reminder */}

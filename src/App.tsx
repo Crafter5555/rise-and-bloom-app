@@ -12,6 +12,7 @@ import Journal from "./pages/Journal";
 import Calendar from "./pages/Calendar";
 import Stats from "./pages/Stats";
 import DigitalWellbeing from "./pages/DigitalWellbeing";
+import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -61,6 +62,11 @@ const App = () => (
                 <ProtectedRoute>
                   <DigitalWellbeing />
                   <BottomNavigation />
+                </ProtectedRoute>
+              } />
+              <Route path="/settings" element={
+                <ProtectedRoute>
+                  <Settings />
                 </ProtectedRoute>
               } />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
