@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, Clock, Target, Calendar, RefreshCw } from "lucide-react";
+import { Check, Clock, Target, Calendar, RefreshCw, Edit } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -284,6 +284,22 @@ export const DailyPlanList = () => {
     fetchDailyPlans();
   };
 
+  // Format time display
+  const formatTime = (timeString: string) => {
+    try {
+      const [hours, minutes] = timeString.split(':');
+      const date = new Date();
+      date.setHours(parseInt(hours), parseInt(minutes));
+      return date.toLocaleTimeString([], { 
+        hour: 'numeric', 
+        minute: '2-digit',
+        hour12: true 
+      });
+    } catch (error) {
+      return timeString;
+    }
+  };
+
   if (loading) {
     return (
       <Card className="p-6">
@@ -378,29 +394,27 @@ export const DailyPlanList = () => {
         
         {/* Time and Duration Info */}
         {(item.scheduled_time || item.estimated_duration_minutes) && (
-          <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+          <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
             {item.scheduled_time && (
-              <span className="flex items-center gap-1">
+              <div className="flex items-center gap-1 bg-primary/10 text-primary px-2 py-1 rounded">
                 <Clock className="w-3 h-3" />
-                {new Date(`2000-01-01T${item.scheduled_time}`).toLocaleTimeString([], { 
-                  hour: 'numeric', 
-                  minute: '2-digit',
-                  hour12: true 
-                })}
-              </span>
+                <span className="font-medium">{formatTime(item.scheduled_time)}</span>
+              </div>
             )}
             {item.estimated_duration_minutes && (
-              <span>
-                ~{item.estimated_duration_minutes < 60 
-                  ? `${item.estimated_duration_minutes}m` 
-                  : `${Math.floor(item.estimated_duration_minutes / 60)}h ${item.estimated_duration_minutes % 60 > 0 ? `${item.estimated_duration_minutes % 60}m` : ''}`
-                }
-              </span>
+              <div className="flex items-center gap-1">
+                <span>
+                  {item.estimated_duration_minutes < 60 
+                    ? `${item.estimated_duration_minutes}min` 
+                    : `${Math.floor(item.estimated_duration_minutes / 60)}h ${item.estimated_duration_minutes % 60 > 0 ? `${item.estimated_duration_minutes % 60}m` : ''}`
+                  }
+                </span>
+              </div>
             )}
           </div>
         )}
         
-        <div className="flex items-center gap-2 mt-1">
+        <div className="flex items-center gap-2 mt-2">
           <Badge 
             variant="outline"
             className="text-xs px-2 py-0 capitalize"
@@ -418,9 +432,9 @@ export const DailyPlanList = () => {
         </div>
       </div>
 
-      {/* Reschedule Button */}
+      {/* Edit Schedule Button */}
       {!item.completed && item.item_id && (
-        <div onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
           <ScheduleButton
             item={{
               id: item.item_id,
@@ -430,6 +444,7 @@ export const DailyPlanList = () => {
             onScheduled={handleRescheduled}
             variant="ghost"
             size="sm"
+            className="text-muted-foreground hover:text-primary"
             existingPlanId={item.id}
             isRescheduling={true}
             initialDate={new Date(item.plan_date)}
