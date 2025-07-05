@@ -9,6 +9,7 @@ import Planning from "./pages/Planning";
 import Journal from "./pages/Journal";
 import Calendar from "./pages/Calendar";
 import Stats from "./pages/Stats";
+import DigitalWellbeing from "./pages/DigitalWellbeing";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
