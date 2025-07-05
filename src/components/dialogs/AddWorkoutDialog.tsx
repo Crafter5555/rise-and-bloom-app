@@ -6,6 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Plus, Minus } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 interface Exercise {
   id: string;
@@ -19,11 +22,13 @@ interface Exercise {
 interface AddWorkoutDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onWorkoutAdded?: () => void;
 }
 
-export const AddWorkoutDialog = ({ open, onOpenChange }: AddWorkoutDialogProps) => {
+export const AddWorkoutDialog = ({ open, onOpenChange, onWorkoutAdded }: AddWorkoutDialogProps) => {
   const [workoutName, setWorkoutName] = useState("");
   const [description, setDescription] = useState("");
+  const [loading, setLoading] = useState(false);
   const [exercises, setExercises] = useState<Exercise[]>([
     {
       id: "1",
@@ -34,6 +39,9 @@ export const AddWorkoutDialog = ({ open, onOpenChange }: AddWorkoutDialogProps) 
       duration: 0
     }
   ]);
+  
+  const { user } = useAuth();
+  const { toast } = useToast();
 
   const addExercise = () => {
     const newExercise: Exercise = {
@@ -59,24 +67,77 @@ export const AddWorkoutDialog = ({ open, onOpenChange }: AddWorkoutDialogProps) 
     ));
   };
 
-  const handleSave = () => {
-    // Here you would save the workout to your data store
-    console.log("Saving workout:", { workoutName, description, exercises });
+  const handleSave = async () => {
+    if (!user || !workoutName.trim()) return;
+
+    setLoading(true);
     
-    // Reset form
-    setWorkoutName("");
-    setDescription("");
-    setExercises([{
-      id: "1",
-      name: "",
-      sets: 3,
-      reps: 10,
-      weight: 0,
-      duration: 0
-    }]);
-    
-    // Close dialog
-    onOpenChange(false);
+    try {
+      // Create workout
+      const { data: workout, error: workoutError } = await supabase
+        .from('workouts')
+        .insert({
+          user_id: user.id,
+          name: workoutName.trim(),
+          description: description.trim() || null,
+          total_duration_minutes: exercises.reduce((total, ex) => total + (ex.duration || 0), 0) / 60
+        })
+        .select()
+        .single();
+
+      if (workoutError) throw workoutError;
+
+      // Create exercises
+      const exerciseInserts = exercises
+        .filter(ex => ex.name.trim())
+        .map((ex, index) => ({
+          workout_id: workout.id,
+          exercise_name: ex.name.trim(),
+          sets: ex.sets,
+          reps: ex.reps,
+          weight: ex.weight,
+          duration_seconds: ex.duration,
+          order_index: index
+        }));
+
+      if (exerciseInserts.length > 0) {
+        const { error: exercisesError } = await supabase
+          .from('workout_exercises')
+          .insert(exerciseInserts);
+
+        if (exercisesError) throw exercisesError;
+      }
+
+      toast({
+        title: "Success",
+        description: "Workout created successfully!"
+      });
+
+      // Reset form
+      setWorkoutName("");
+      setDescription("");
+      setExercises([{
+        id: "1",
+        name: "",
+        sets: 3,
+        reps: 10,
+        weight: 0,
+        duration: 0
+      }]);
+      
+      onWorkoutAdded?.();
+      onOpenChange(false);
+      
+    } catch (error) {
+      console.error('Error creating workout:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create workout. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -200,15 +261,16 @@ export const AddWorkoutDialog = ({ open, onOpenChange }: AddWorkoutDialogProps) 
             variant="outline"
             onClick={() => onOpenChange(false)}
             className="flex-1"
+            disabled={loading}
           >
             Cancel
           </Button>
           <Button
             onClick={handleSave}
-            disabled={!workoutName.trim() || exercises.some(ex => !ex.name.trim())}
+            disabled={!workoutName.trim() || exercises.some(ex => !ex.name.trim()) || loading}
             className="flex-1"
           >
-            Save Workout
+            {loading ? "Creating..." : "Save Workout"}
           </Button>
         </div>
       </DialogContent>
