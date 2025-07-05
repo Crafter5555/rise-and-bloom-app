@@ -8,7 +8,8 @@ import { IntentionalitySettings } from "@/components/digital-wellbeing/Intention
 import { AIReflectionPanel } from "@/components/digital-wellbeing/AIReflectionPanel";
 import { BehaviorInsights } from "@/components/digital-wellbeing/BehaviorInsights";
 import { IntentionalityPopup } from "@/components/digital-wellbeing/IntentionalityPopup";
-import { Settings, TrendingUp, Brain, Shield } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Settings, TrendingUp, Brain, Shield, Smartphone, ExternalLink } from "lucide-react";
 
 const DigitalWellbeing = () => {
   const [showPopup, setShowPopup] = useState(false);
@@ -38,9 +39,13 @@ const DigitalWellbeing = () => {
           </div>
           <h1 className="text-2xl font-bold text-foreground">Digital Wellbeing</h1>
         </div>
-        <Button variant="ghost" size="icon" className="rounded-full">
-          <Settings className="w-5 h-5" />
-        </Button>
+          <Link to="/stats">
+            <Button variant="outline" size="sm" className="flex items-center gap-2">
+              <Smartphone className="w-4 h-4" />
+              View Stats
+              <ExternalLink className="w-3 h-3" />
+            </Button>
+          </Link>
       </div>
 
       {/* Today's Overview */}
