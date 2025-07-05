@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "lucide-react";
@@ -14,6 +15,12 @@ interface ScheduleButtonProps {
   variant?: "default" | "outline" | "ghost";
   size?: "default" | "sm" | "lg";
   className?: string;
+  // Rescheduling props
+  existingPlanId?: string;
+  isRescheduling?: boolean;
+  initialDate?: Date;
+  initialTime?: string;
+  initialDuration?: number;
 }
 
 export const ScheduleButton = ({ 
@@ -21,7 +28,12 @@ export const ScheduleButton = ({
   onScheduled, 
   variant = "outline", 
   size = "sm",
-  className = "" 
+  className = "",
+  existingPlanId,
+  isRescheduling = false,
+  initialDate,
+  initialTime,
+  initialDuration
 }: ScheduleButtonProps) => {
   const [showScheduleModal, setShowScheduleModal] = useState(false);
 
@@ -39,7 +51,7 @@ export const ScheduleButton = ({
         onClick={() => setShowScheduleModal(true)}
       >
         <Calendar className="w-4 h-4 mr-1" />
-        Schedule
+        {isRescheduling ? "Reschedule" : "Schedule"}
       </Button>
 
       <UniversalScheduleModal
@@ -47,6 +59,11 @@ export const ScheduleButton = ({
         onOpenChange={setShowScheduleModal}
         item={item}
         onScheduled={handleScheduled}
+        existingPlanId={existingPlanId}
+        isRescheduling={isRescheduling}
+        initialDate={initialDate}
+        initialTime={initialTime}
+        initialDuration={initialDuration}
       />
     </>
   );

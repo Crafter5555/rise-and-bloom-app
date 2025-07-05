@@ -2,12 +2,13 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, Clock, Target } from "lucide-react";
+import { Check, Clock, Target, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
 import { EditTaskDialog } from "@/components/dialogs/EditTaskDialog";
+import { ScheduleButton } from "@/components/today/ScheduleButton";
 
 interface DailyPlanItem {
   id: string;
@@ -22,6 +23,7 @@ interface DailyPlanItem {
   scheduled_time?: string;
   estimated_duration_minutes?: number;
   actual_duration_minutes?: number;
+  plan_date: string;
 }
 
 export const DailyPlanList = () => {
@@ -179,6 +181,10 @@ export const DailyPlanList = () => {
     setEditingTask(null);
   };
 
+  const handleRescheduled = () => {
+    fetchDailyPlans();
+  };
+
   if (loading) {
     return (
       <Card className="p-6">
@@ -302,6 +308,27 @@ export const DailyPlanList = () => {
           )}
         </div>
       </div>
+
+      {/* Reschedule Button */}
+      {!item.completed && item.item_id && (
+        <div onClick={(e) => e.stopPropagation()}>
+          <ScheduleButton
+            item={{
+              id: item.item_id,
+              title: item.title,
+              type: item.item_type as any
+            }}
+            onScheduled={handleRescheduled}
+            variant="ghost"
+            size="sm"
+            existingPlanId={item.id}
+            isRescheduling={true}
+            initialDate={new Date(item.plan_date)}
+            initialTime={item.scheduled_time}
+            initialDuration={item.estimated_duration_minutes}
+          />
+        </div>
+      )}
     </div>
   );
 

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -25,17 +26,27 @@ interface UniversalScheduleModalProps {
   onOpenChange: (open: boolean) => void;
   item: Item | null;
   onScheduled?: () => void;
+  existingPlanId?: string; // For rescheduling existing daily plan items
+  isRescheduling?: boolean;
+  initialDate?: Date;
+  initialTime?: string;
+  initialDuration?: number;
 }
 
 export const UniversalScheduleModal = ({ 
   open, 
   onOpenChange, 
   item, 
-  onScheduled 
+  onScheduled,
+  existingPlanId,
+  isRescheduling = false,
+  initialDate,
+  initialTime,
+  initialDuration
 }: UniversalScheduleModalProps) => {
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [scheduledTime, setScheduledTime] = useState("");
-  const [estimatedDuration, setEstimatedDuration] = useState(30);
+  const [selectedDate, setSelectedDate] = useState<Date>(initialDate || new Date());
+  const [scheduledTime, setScheduledTime] = useState(initialTime || "");
+  const [estimatedDuration, setEstimatedDuration] = useState(initialDuration || 30);
   const [loading, setLoading] = useState(false);
   
   const { user } = useAuth();
@@ -48,25 +59,74 @@ export const UniversalScheduleModal = ({
     
     try {
       const itemTitle = item.title || item.name || "Untitled";
+      const planDate = format(selectedDate, 'yyyy-MM-dd');
       
-      const { error } = await supabase
-        .from('daily_plans')
-        .insert({
-          user_id: user.id,
-          plan_date: format(selectedDate, 'yyyy-MM-dd'),
-          item_type: item.type,
-          item_id: item.id,
-          title: itemTitle,
-          scheduled_time: scheduledTime || null,
-          estimated_duration_minutes: estimatedDuration
+      if (isRescheduling && existingPlanId) {
+        // Update existing daily plan
+        const { error } = await supabase
+          .from('daily_plans')
+          .update({
+            plan_date: planDate,
+            scheduled_time: scheduledTime || null,
+            estimated_duration_minutes: estimatedDuration
+          })
+          .eq('id', existingPlanId);
+
+        if (error) throw error;
+
+        toast({
+          title: "Success",
+          description: `${itemTitle} rescheduled to ${format(selectedDate, 'PPP')}${scheduledTime ? ` at ${new Date(`2000-01-01T${scheduledTime}`).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}` : ''}`
         });
+      } else {
+        // Check if item is already scheduled for this date
+        const { data: existingPlan } = await supabase
+          .from('daily_plans')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('plan_date', planDate)
+          .eq('item_type', item.type)
+          .eq('item_id', item.id)
+          .maybeSingle();
 
-      if (error) throw error;
+        if (existingPlan) {
+          // Update existing plan instead of creating duplicate
+          const { error } = await supabase
+            .from('daily_plans')
+            .update({
+              scheduled_time: scheduledTime || null,
+              estimated_duration_minutes: estimatedDuration
+            })
+            .eq('id', existingPlan.id);
 
-      toast({
-        title: "Success",
-        description: `${itemTitle} scheduled for ${format(selectedDate, 'PPP')}${scheduledTime ? ` at ${new Date(`2000-01-01T${scheduledTime}`).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}` : ''}`
-      });
+          if (error) throw error;
+
+          toast({
+            title: "Success",
+            description: `${itemTitle} updated for ${format(selectedDate, 'PPP')}${scheduledTime ? ` at ${new Date(`2000-01-01T${scheduledTime}`).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}` : ''}`
+          });
+        } else {
+          // Create new daily plan
+          const { error } = await supabase
+            .from('daily_plans')
+            .insert({
+              user_id: user.id,
+              plan_date: planDate,
+              item_type: item.type,
+              item_id: item.id,
+              title: itemTitle,
+              scheduled_time: scheduledTime || null,
+              estimated_duration_minutes: estimatedDuration
+            });
+
+          if (error) throw error;
+
+          toast({
+            title: "Success",
+            description: `${itemTitle} scheduled for ${format(selectedDate, 'PPP')}${scheduledTime ? ` at ${new Date(`2000-01-01T${scheduledTime}`).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}` : ''}`
+          });
+        }
+      }
 
       // Reset form
       setSelectedDate(new Date());
@@ -108,7 +168,7 @@ export const UniversalScheduleModal = ({
       <DialogContent className="sm:max-w-md mx-4">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">
-            Schedule {getItemTypeDisplayName()}
+            {isRescheduling ? 'Reschedule' : 'Schedule'} {getItemTypeDisplayName()}
           </DialogTitle>
         </DialogHeader>
         
@@ -118,6 +178,9 @@ export const UniversalScheduleModal = ({
             <div className="p-3 bg-muted rounded-lg">
               <div className="font-medium text-foreground">{getItemDisplayName()}</div>
               <div className="text-sm text-muted-foreground capitalize">{item.type}</div>
+              {isRescheduling && (
+                <div className="text-xs text-primary mt-1">Rescheduling existing plan</div>
+              )}
             </div>
 
             {/* Date Selection */}
@@ -197,7 +260,7 @@ export const UniversalScheduleModal = ({
             disabled={!item || loading}
             className="flex-1"
           >
-            {loading ? "Scheduling..." : "Schedule"}
+            {loading ? (isRescheduling ? "Rescheduling..." : "Scheduling...") : (isRescheduling ? "Reschedule" : "Schedule")}
           </Button>
         </div>
       </DialogContent>
