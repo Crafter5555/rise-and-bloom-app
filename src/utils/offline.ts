@@ -1,5 +1,5 @@
 
-import React from 'react';
+import { useState, useEffect } from 'react';
 
 // Offline functionality utilities
 
@@ -84,9 +84,9 @@ export const offlineManager = new OfflineManager();
 
 // Hook for using offline status in components
 export const useOfflineStatus = () => {
-  const [isOnline, setIsOnline] = React.useState(offlineManager.getOnlineStatus());
+  const [isOnline, setIsOnline] = useState(offlineManager.getOnlineStatus());
 
-  React.useEffect(() => {
+  useEffect(() => {
     const unsubscribe = offlineManager.addOnlineListener(setIsOnline);
     return unsubscribe;
   }, []);
