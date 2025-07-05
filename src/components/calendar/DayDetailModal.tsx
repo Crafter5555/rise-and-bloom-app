@@ -21,9 +21,36 @@ export const DayDetailModal = ({ isOpen, onClose, selectedDate, onEditDay }: Day
   const isPast = selectedDate < new Date();
   const isFuture = selectedDate > new Date();
 
-  // Mock comprehensive day data
+  // Mock comprehensive day data with quiz integration
   const dayData = {
     overallScore: 8.2,
+    // Morning Quiz Data
+    morningQuiz: {
+      completed: true,
+      responses: {
+        sleepQuality: 8,
+        sleepHours: 7.5,
+        energyLevel: 8,
+        mood: 8,
+        goals: ["Complete project presentation", "Exercise for 45 minutes", "Call mom"],
+        priorities: "Focus on deep work in the morning, meetings in the afternoon",
+        challenges: "Time management with back-to-back meetings"
+      }
+    },
+    // Evening Quiz Data  
+    eveningQuiz: {
+      completed: true,
+      responses: {
+        overallMood: 7,
+        energyLevel: 6,
+        daySuccess: 8,
+        accomplishments: "Finished presentation, had great workout, productive team meeting",
+        challenges: "Got distracted by social media during focus time",
+        gratitude: ["Supportive team", "Good health", "Beautiful weather"],
+        tomorrowFocus: "Start with most important task first thing",
+        screenTimeReflection: "Used phone too much during breaks"
+      }
+    },
     tasks: {
       completed: 8,
       total: 12,
@@ -55,20 +82,15 @@ export const DayDetailModal = ({ isOpen, onClose, selectedDate, onEditDay }: Day
         { name: "Instagram", time: "58m", icon: "📸" },
         { name: "YouTube", time: "1h 12m", icon: "▶️" },
         { name: "Slack", time: "45m", icon: "💬" }
-      ]
-    },
-    mood: {
-      morning: { score: 8, note: "Feeling energized and motivated" },
-      evening: { score: 7, note: "Good day overall, slightly tired" }
-    },
-    journal: {
-      hasEntry: true,
-      preview: "Had a productive morning, completed most important tasks. Need to focus more on evening routine..."
+      ],
+      intentionalUsage: 68,
+      socialMediaDistraction: true
     },
     insights: [
-      "Best focus window was 9-11 AM with 95% task completion",
-      "Social media usage down 23% from yesterday",
-      "Longest deep work session: 2h 15m"
+      "Morning energy (8/10) aligned with high task completion rate",
+      "Evening energy drop (6/10) correlated with increased social media use", 
+      "Sleep quality (8/10) contributed to productive morning session",
+      "Goal completion: 2/3 major goals achieved"
     ]
   };
 
@@ -165,45 +187,94 @@ export const DayDetailModal = ({ isOpen, onClose, selectedDate, onEditDay }: Day
                   </Card>
                 </div>
 
-                {/* Mood & Journal */}
+                {/* Morning & Evening Quiz Data */}
                 <Card className="p-4">
-                  <h3 className="font-semibold mb-3">Mood & Reflection</h3>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl">🌅</span>
-                        <div>
-                          <div className="text-sm font-medium">Morning Mood</div>
-                          <div className="text-xs text-muted-foreground">{dayData.mood.morning.note}</div>
+                  <h3 className="font-semibold mb-3">Daily Check-ins</h3>
+                  <div className="space-y-4">
+                    {/* Morning Quiz Summary */}
+                    {dayData.morningQuiz.completed && (
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-2xl">🌅</span>
+                          <span className="font-medium">Morning Planning</span>
+                          <Badge className="bg-green-100 text-green-800">Completed</Badge>
                         </div>
-                      </div>
-                      <div className="text-lg font-semibold text-primary">{dayData.mood.morning.score}/10</div>
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl">🌙</span>
-                        <div>
-                          <div className="text-sm font-medium">Evening Mood</div>
-                          <div className="text-xs text-muted-foreground">{dayData.mood.evening.note}</div>
-                        </div>
-                      </div>
-                      <div className="text-lg font-semibold text-primary">{dayData.mood.evening.score}/10</div>
-                    </div>
-                    
-                    {dayData.journal.hasEntry && (
-                      <>
-                        <Separator />
-                        <div>
-                          <div className="text-sm font-medium mb-1 flex items-center gap-2">
-                            <span>📝</span>
-                            Journal Entry
+                        
+                        <div className="grid grid-cols-2 gap-4 text-center">
+                          <div className="p-3 bg-blue-50 rounded">
+                            <div className="text-lg font-bold text-blue-600">{dayData.morningQuiz.responses.sleepQuality}/10</div>
+                            <div className="text-xs text-muted-foreground">Sleep Quality</div>
                           </div>
-                          <div className="text-sm text-muted-foreground bg-muted p-3 rounded-lg">
-                            {dayData.journal.preview}
+                          <div className="p-3 bg-green-50 rounded">
+                            <div className="text-lg font-bold text-green-600">{dayData.morningQuiz.responses.energyLevel}/10</div>
+                            <div className="text-xs text-muted-foreground">Energy Level</div>
+                          </div>
+                          <div className="p-3 bg-purple-50 rounded">
+                            <div className="text-lg font-bold text-purple-600">{dayData.morningQuiz.responses.mood}/10</div>
+                            <div className="text-xs text-muted-foreground">Morning Mood</div>
+                          </div>
+                          <div className="p-3 bg-orange-50 rounded">
+                            <div className="text-lg font-bold text-orange-600">{dayData.morningQuiz.responses.sleepHours}h</div>
+                            <div className="text-xs text-muted-foreground">Sleep Duration</div>
                           </div>
                         </div>
-                      </>
+                        
+                        <div className="bg-muted p-3 rounded-lg">
+                          <div className="text-sm font-medium mb-1">Today's Goals:</div>
+                          <ul className="text-sm text-muted-foreground space-y-1">
+                            {dayData.morningQuiz.responses.goals.map((goal, index) => (
+                              <li key={index}>• {goal}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    )}
+
+                    <Separator />
+
+                    {/* Evening Quiz Summary */}
+                    {dayData.eveningQuiz.completed && (
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-2xl">🌙</span>
+                          <span className="font-medium">Evening Reflection</span>
+                          <Badge className="bg-purple-100 text-purple-800">Completed</Badge>
+                        </div>
+                        
+                        <div className="grid grid-cols-3 gap-4 text-center">
+                          <div className="p-3 bg-blue-50 rounded">
+                            <div className="text-lg font-bold text-blue-600">{dayData.eveningQuiz.responses.overallMood}/10</div>
+                            <div className="text-xs text-muted-foreground">Overall Mood</div>
+                          </div>
+                          <div className="p-3 bg-green-50 rounded">
+                            <div className="text-lg font-bold text-green-600">{dayData.eveningQuiz.responses.energyLevel}/10</div>
+                            <div className="text-xs text-muted-foreground">Energy Level</div>
+                          </div>
+                          <div className="p-3 bg-purple-50 rounded">
+                            <div className="text-lg font-bold text-purple-600">{dayData.eveningQuiz.responses.daySuccess}/10</div>
+                            <div className="text-xs text-muted-foreground">Day Success</div>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <div className="bg-green-50 p-3 rounded-lg">
+                            <div className="text-sm font-medium mb-1 text-green-800">✨ Accomplishments:</div>
+                            <div className="text-sm text-green-700">{dayData.eveningQuiz.responses.accomplishments}</div>
+                          </div>
+                          
+                          <div className="bg-orange-50 p-3 rounded-lg">
+                            <div className="text-sm font-medium mb-1 text-orange-800">🤔 Challenges:</div>
+                            <div className="text-sm text-orange-700">{dayData.eveningQuiz.responses.challenges}</div>
+                          </div>
+                          
+                          <div className="bg-pink-50 p-3 rounded-lg">
+                            <div className="text-sm font-medium mb-1 text-pink-800">🙏 Gratitude:</div>
+                            <div className="text-sm text-pink-700">
+                              {dayData.eveningQuiz.responses.gratitude.join(", ")}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     )}
                   </div>
                 </Card>

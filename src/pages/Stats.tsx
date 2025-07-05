@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MetricCard } from "@/components/ui/metric-card";
 import { ProgressRing } from "@/components/ui/progress-ring";
@@ -23,12 +24,36 @@ import {
 } from "lucide-react";
 
 const Stats = () => {
-  // Mock comprehensive stats data
+  // Mock comprehensive stats data with quiz integration
   const digitalHealthStats = {
     screenTime: { value: "4h 23m", change: "+12%", trend: "up" },
     pickups: { value: "47", change: "-8%", trend: "down" },
     focusScore: { value: "7.2", change: "+0.5", trend: "up" },
     intentionalUsage: { value: "68%", change: "+15%", trend: "up" }
+  };
+
+  // Quiz-based wellness data
+  const quizData = {
+    morningMetrics: {
+      avgSleepQuality: 7.8,
+      avgSleepHours: 7.2,
+      avgMorningEnergy: 7.9,
+      avgMorningMood: 8.1,
+      quizCompletionRate: 85
+    },
+    eveningMetrics: {
+      avgOverallMood: 7.4,
+      avgEveningEnergy: 6.8,
+      avgDaySuccess: 7.6,
+      gratitudeEntries: 21,
+      quizCompletionRate: 78
+    },
+    correlations: {
+      sleepVsFocus: 0.73,
+      energyVsTasks: 0.68,
+      moodVsProductivity: 0.71,
+      screenTimeVsMood: -0.45
+    }
   };
 
   const topApps = [
@@ -38,14 +63,15 @@ const Stats = () => {
     { name: "Twitter/X", time: "32m", icon: "🐦", change: "+45%" }
   ];
 
-  const weeklyMood = [
-    { day: "Mon", score: 8, emoji: "😊" },
-    { day: "Tue", score: 6, emoji: "😐" },
-    { day: "Wed", score: 9, emoji: "😄" },
-    { day: "Thu", score: 7, emoji: "🙂" },
-    { day: "Fri", score: 8, emoji: "😊" },
-    { day: "Sat", score: 9, emoji: "😄" },
-    { day: "Sun", score: 7, emoji: "🙂" }
+  // Enhanced mood tracking with quiz data
+  const weeklyWellness = [
+    { day: "Mon", morningMood: 8, eveningMood: 7, energy: 8, sleep: 7, emoji: "😊" },
+    { day: "Tue", morningMood: 6, eveningMood: 6, energy: 6, sleep: 6, emoji: "😐" },
+    { day: "Wed", morningMood: 9, eveningMood: 8, energy: 9, sleep: 8, emoji: "😄" },
+    { day: "Thu", morningMood: 7, eveningMood: 7, energy: 7, sleep: 7, emoji: "🙂" },
+    { day: "Fri", morningMood: 8, eveningMood: 8, energy: 8, sleep: 8, emoji: "😊" },
+    { day: "Sat", morningMood: 9, eveningMood: 9, energy: 9, sleep: 9, emoji: "😄" },
+    { day: "Sun", morningMood: 7, eveningMood: 7, energy: 7, sleep: 7, emoji: "🙂" }
   ];
 
   const habits = [
@@ -575,52 +601,190 @@ const Stats = () => {
 
         {/* Wellness Tab */}
         <TabsContent value="wellness" className="space-y-6">
-          {/* Mood Tracking */}
+          {/* Quiz Completion Overview */}
+          <div className="grid grid-cols-2 gap-4">
+            <Card className="p-4 shadow-soft">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-2xl">🌅</span>
+                <span className="text-sm font-medium">Morning Planning</span>
+              </div>
+              <div className="text-2xl font-bold text-primary">{quizData.morningMetrics.quizCompletionRate}%</div>
+              <div className="text-xs text-muted-foreground">Completion Rate</div>
+              <Progress value={quizData.morningMetrics.quizCompletionRate} className="h-2 mt-2" />
+            </Card>
+            
+            <Card className="p-4 shadow-soft">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-2xl">🌙</span>
+                <span className="text-sm font-medium">Evening Reflection</span>
+              </div>
+              <div className="text-2xl font-bold text-purple-600">{quizData.eveningMetrics.quizCompletionRate}%</div>
+              <div className="text-xs text-muted-foreground">Completion Rate</div>
+              <Progress value={quizData.eveningMetrics.quizCompletionRate} className="h-2 mt-2" />
+            </Card>
+          </div>
+
+          {/* Wellness Metrics Dashboard */}
           <Card className="p-6 shadow-soft">
-            <h3 className="text-lg font-semibold mb-4">Weekly Mood</h3>
-            <div className="flex justify-between items-end mb-4">
-              {weeklyMood.map((day, index) => (
-                <div key={index} className="flex flex-col items-center gap-2">
-                  <div className="text-2xl">{day.emoji}</div>
-                  <div className="w-6 bg-muted rounded-full overflow-hidden">
-                    <div 
-                      className="bg-gradient-to-t from-purple-400 to-pink-400 rounded-full transition-all"
-                      style={{ height: `${day.score * 10}%` }}
-                    />
-                  </div>
-                  <div className="text-xs text-muted-foreground">{day.day}</div>
-                </div>
-              ))}
-            </div>
-            <div className="text-center">
-              <div className="text-lg font-semibold text-purple-600">7.7/10</div>
-              <div className="text-sm text-muted-foreground">Average mood this week</div>
+            <h3 className="text-lg font-semibold mb-4">Weekly Wellness Averages</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+              <div className="text-center p-4 bg-blue-50 rounded-lg">
+                <div className="text-2xl font-bold text-blue-600">{quizData.morningMetrics.avgSleepQuality}/10</div>
+                <div className="text-sm text-blue-700">Sleep Quality</div>
+              </div>
+              <div className="text-center p-4 bg-green-50 rounded-lg">
+                <div className="text-2xl font-bold text-green-600">{quizData.morningMetrics.avgSleepHours}h</div>
+                <div className="text-sm text-green-700">Sleep Duration</div>
+              </div>
+              <div className="text-center p-4 bg-orange-50 rounded-lg">
+                <div className="text-2xl font-bold text-orange-600">{quizData.morningMetrics.avgMorningEnergy}/10</div>
+                <div className="text-sm text-orange-700">Morning Energy</div>
+              </div>
+              <div className="text-center p-4 bg-purple-50 rounded-lg">
+                <div className="text-2xl font-bold text-purple-600">{quizData.eveningMetrics.avgOverallMood}/10</div>
+                <div className="text-sm text-purple-700">Overall Mood</div>
+              </div>
             </div>
           </Card>
 
-          {/* Wellness Insights */}
+          {/* Enhanced Mood & Energy Tracking */}
           <Card className="p-6 shadow-soft">
-            <h3 className="text-lg font-semibold mb-4">Wellness Insights</h3>
+            <h3 className="text-lg font-semibold mb-4">Daily Wellness Patterns</h3>
             <div className="space-y-4">
-              <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                <div className="flex items-center gap-2 mb-2">
-                  <Zap className="w-4 h-4 text-green-600" />
-                  <span className="font-medium text-green-800">Energy Boost</span>
+              {/* Morning vs Evening Mood */}
+              <div>
+                <div className="text-sm font-medium mb-2">Morning vs Evening Mood</div>
+                <div className="flex justify-between items-end mb-2">
+                  {weeklyWellness.map((day, index) => (
+                    <div key={index} className="flex flex-col items-center gap-2">
+                      <div className="text-xs text-muted-foreground">{day.day}</div>
+                      <div className="flex gap-1">
+                        <div 
+                          className="w-4 bg-gradient-to-t from-yellow-400 to-orange-400 rounded-sm"
+                          style={{ height: `${day.morningMood * 4}px` }}
+                          title={`Morning: ${day.morningMood}/10`}
+                        />
+                        <div 
+                          className="w-4 bg-gradient-to-t from-purple-400 to-blue-400 rounded-sm"
+                          style={{ height: `${day.eveningMood * 4}px` }}
+                          title={`Evening: ${day.eveningMood}/10`}
+                        />
+                      </div>
+                      <div className="text-lg">{day.emoji}</div>
+                    </div>
+                  ))}
                 </div>
-                <p className="text-sm text-green-700">
-                  Your energy levels are highest on days when you complete morning planning. 
-                  Keep building this habit!
-                </p>
+                <div className="flex justify-center gap-4 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 bg-gradient-to-t from-yellow-400 to-orange-400 rounded-sm" />
+                    <span>Morning</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 bg-gradient-to-t from-purple-400 to-blue-400 rounded-sm" />
+                    <span>Evening</span>
+                  </div>
+                </div>
               </div>
-              
-              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <div className="flex items-center gap-2 mb-2">
-                  <Brain className="w-4 h-4 text-blue-600" />
-                  <span className="font-medium text-blue-800">Focus Pattern</span>
+
+              <Separator />
+
+              {/* Energy & Sleep Pattern */}
+              <div>
+                <div className="text-sm font-medium mb-2">Energy & Sleep Quality</div>
+                <div className="flex justify-between items-end mb-2">
+                  {weeklyWellness.map((day, index) => (
+                    <div key={index} className="flex flex-col items-center gap-2">
+                      <div className="text-xs text-muted-foreground">{day.day}</div>
+                      <div className="flex gap-1">
+                        <div 
+                          className="w-4 bg-gradient-to-t from-green-400 to-green-600 rounded-sm"
+                          style={{ height: `${day.energy * 4}px` }}
+                          title={`Energy: ${day.energy}/10`}
+                        />
+                        <div 
+                          className="w-4 bg-gradient-to-t from-blue-400 to-blue-600 rounded-sm"
+                          style={{ height: `${day.sleep * 4}px` }}
+                          title={`Sleep: ${day.sleep}/10`}
+                        />
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <p className="text-sm text-blue-700">
-                  Your focus is 34% better on days with lower social media usage. 
-                  Consider app time limits during work hours.
+                <div className="flex justify-center gap-4 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 bg-gradient-to-t from-green-400 to-green-600 rounded-sm" />
+                    <span>Energy</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 bg-gradient-to-t from-blue-400 to-blue-600 rounded-sm" />
+                    <span>Sleep</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          {/* Health Correlations */}
+          <Card className="p-6 shadow-soft">
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Brain className="w-5 h-5 text-purple-500" />
+              Health Insights & Correlations
+            </h3>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-green-600">💤</span>
+                    <span className="font-medium text-green-800">Sleep → Focus</span>
+                    <Badge className="bg-green-100 text-green-800">{(quizData.correlations.sleepVsFocus * 100).toFixed(0)}% correlation</Badge>
+                  </div>
+                  <p className="text-sm text-green-700">
+                    Better sleep quality strongly predicts higher focus scores the next day.
+                  </p>
+                </div>
+                
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-blue-600">⚡</span>
+                    <span className="font-medium text-blue-800">Energy → Tasks</span>
+                    <Badge className="bg-blue-100 text-blue-800">{(quizData.correlations.energyVsTasks * 100).toFixed(0)}% correlation</Badge>
+                  </div>
+                  <p className="text-sm text-blue-700">
+                    Higher morning energy levels lead to significantly more completed tasks.
+                  </p>
+                </div>
+                
+                <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-purple-600">😊</span>
+                    <span className="font-medium text-purple-800">Mood → Productivity</span>
+                    <Badge className="bg-purple-100 text-purple-800">{(quizData.correlations.moodVsProductivity * 100).toFixed(0)}% correlation</Badge>
+                  </div>
+                  <p className="text-sm text-purple-700">
+                    Positive mood in the morning correlates with higher overall productivity.
+                  </p>
+                </div>
+                
+                <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-orange-600">📱</span>
+                    <span className="font-medium text-orange-800">Screen Time → Mood</span>
+                    <Badge variant="outline" className="bg-orange-100 text-orange-800">-{Math.abs(quizData.correlations.screenTimeVsMood * 100).toFixed(0)}% correlation</Badge>
+                  </div>
+                  <p className="text-sm text-orange-700">
+                    Excessive screen time negatively impacts evening mood and reflection quality.
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg border border-blue-200">
+                <div className="flex items-center gap-2 mb-2">
+                  <Zap className="w-4 h-4 text-purple-600" />
+                  <span className="font-medium text-purple-800">Weekly Pattern</span>
+                </div>
+                <p className="text-sm text-purple-700">
+                  Your best days happen when: sleep quality ≥8, morning energy ≥8, and screen time &lt;4 hours. 
+                  This pattern occurred 3 times this week with 94% average task completion.
                 </p>
               </div>
             </div>
