@@ -7,7 +7,6 @@ import { AIAssistantPanel } from "@/components/today/AIAssistantCard";
 import { EveningCheckIn } from "@/components/today/EveningCheckIn";
 import { AddToPlanSheet } from "@/components/today/AddToPlanSheet";
 import { QuizReminder } from "@/components/today/QuizReminder";
-import { QuoteOfTheDay } from "@/components/today/QuoteOfTheDay";
 import { MorningPlanningDialog } from "@/components/dialogs/MorningPlanningDialog";
 import { EveningReflectionDialog } from "@/components/dialogs/EveningReflectionDialog";
 import { useAuth } from "@/contexts/AuthContext";
@@ -21,6 +20,10 @@ const Today = () => {
   const [isEvening, setIsEvening] = useState(false);
   const [morningQuizOpen, setMorningQuizOpen] = useState(false);
   const [eveningQuizOpen, setEveningQuizOpen] = useState(false);
+  const [dailyQuote, setDailyQuote] = useState({
+    text: "The way to get started is to quit talking and begin doing.",
+    author: "Walt Disney"
+  });
   
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
@@ -28,6 +31,49 @@ const Today = () => {
   const dayName = currentDate.toLocaleDateString('en-US', { weekday: 'long' });
   const monthDay = currentDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
   const userName = user?.user_metadata?.display_name || user?.user_metadata?.username || "User";
+
+  const quotes = [
+    {
+      text: "The way to get started is to quit talking and begin doing.",
+      author: "Walt Disney"
+    },
+    {
+      text: "The future belongs to those who believe in the beauty of their dreams.",
+      author: "Eleanor Roosevelt"
+    },
+    {
+      text: "It is during our darkest moments that we must focus to see the light.",
+      author: "Aristotle"
+    },
+    {
+      text: "Success is not final, failure is not fatal: it is the courage to continue that counts.",
+      author: "Winston Churchill"
+    },
+    {
+      text: "The only impossible journey is the one you never begin.",
+      author: "Tony Robbins"
+    },
+    {
+      text: "In the middle of difficulty lies opportunity.",
+      author: "Albert Einstein"
+    },
+    {
+      text: "Believe you can and you're halfway there.",
+      author: "Theodore Roosevelt"
+    },
+    {
+      text: "The only way to do great work is to love what you do.",
+      author: "Steve Jobs"
+    },
+    {
+      text: "Life is what happens to you while you're busy making other plans.",
+      author: "John Lennon"
+    },
+    {
+      text: "The future depends on what you do today.",
+      author: "Mahatma Gandhi"
+    }
+  ];
   
   // Check if it's morning (6 AM - 12 PM) or evening (6 PM - 11 PM)
   useEffect(() => {
@@ -39,6 +85,12 @@ const Today = () => {
     const showMorningQuiz = hour >= 6 && hour < 12 && !hasCompletedMorningQuiz();
     const showEveningQuiz = hour >= 18 && hour < 23 && !hasCompletedEveningQuiz();
     setShowQuizReminder(showMorningQuiz || showEveningQuiz);
+
+    // Get a consistent quote for the day based on the date
+    const today = new Date();
+    const dayOfYear = Math.floor((today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24));
+    const quoteIndex = dayOfYear % quotes.length;
+    setDailyQuote(quotes[quoteIndex]);
   }, []);
 
   const handleStartQuiz = () => {
@@ -57,37 +109,48 @@ const Today = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 pb-20 px-4 pt-6">
       {/* Personalized Greeting */}
-      <div className="mb-6 flex justify-between items-start">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground mb-1">
-            Good {isEvening ? 'evening' : 'morning'}, {userName} 👋
-          </h1>
-          <p className="text-base text-muted-foreground">
-            {dayName}, {monthDay}
-          </p>
+      <div className="mb-6">
+        <div className="flex justify-between items-start mb-3">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground mb-1">
+              Good {isEvening ? 'evening' : 'morning'}, {userName} 👋
+            </h1>
+            <p className="text-base text-muted-foreground">
+              {dayName}, {monthDay}
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => navigate('/settings')}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <Settings className="w-5 h-5" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={signOut}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <LogOut className="w-5 h-5" />
+            </Button>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={() => navigate('/settings')}
-            className="text-muted-foreground hover:text-foreground"
-          >
-            <Settings className="w-5 h-5" />
-          </Button>
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={signOut}
-            className="text-muted-foreground hover:text-foreground"
-          >
-            <LogOut className="w-5 h-5" />
-          </Button>
+        
+        {/* Quote of the Day */}
+        <div className="p-3 bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5 border border-primary/20 rounded-lg">
+          <div className="text-center">
+            <blockquote className="text-sm font-medium text-foreground mb-1 leading-relaxed">
+              "{dailyQuote.text}"
+            </blockquote>
+            <cite className="text-xs text-muted-foreground font-medium">
+              — {dailyQuote.author}
+            </cite>
+          </div>
         </div>
       </div>
-
-      {/* Quote of the Day */}
-      <QuoteOfTheDay />
 
       {/* Quiz Reminder */}
       {showQuizReminder && (
