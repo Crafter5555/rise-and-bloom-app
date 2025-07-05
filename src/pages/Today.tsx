@@ -1,17 +1,17 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Plus } from "lucide-react";
-import { MoodSlider } from "@/components/today/MoodSlider";
 import { DailyPlanList } from "@/components/today/DailyPlanList";
 import { InsightsPanel } from "@/components/today/InsightsPanel";
 import { AIAssistantPanel } from "@/components/today/AIAssistantCard";
 import { EveningCheckIn } from "@/components/today/EveningCheckIn";
 import { AddToPlanSheet } from "@/components/today/AddToPlanSheet";
+import { QuizReminder } from "@/components/today/QuizReminder";
 
 const Today = () => {
   const [addToPlanOpen, setAddToPlanOpen] = useState(false);
-  const [focusInput, setFocusInput] = useState("");
+  const [showQuizReminder, setShowQuizReminder] = useState(true);
+  const [quizType, setQuizType] = useState<"morning" | "evening">("morning");
   const [isEvening, setIsEvening] = useState(false);
   
   const currentDate = new Date();
@@ -19,15 +19,26 @@ const Today = () => {
   const monthDay = currentDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
   const userName = "Jamie"; // This would come from user profile
   
-  // Check if it's evening (after 7 PM)
+  // Check if it's morning (6 AM - 12 PM) or evening (6 PM - 11 PM)
   useEffect(() => {
     const hour = new Date().getHours();
-    setIsEvening(hour >= 19);
+    setIsEvening(hour >= 18);
+    setQuizType(hour >= 18 ? "evening" : "morning");
+    
+    // Show quiz reminders only during specific times
+    const showMorningQuiz = hour >= 6 && hour < 12;
+    const showEveningQuiz = hour >= 18 && hour < 23;
+    setShowQuizReminder(showMorningQuiz || showEveningQuiz);
   }, []);
 
-  const handleMoodChange = (mood: number) => {
-    console.log("Mood changed to:", mood);
-    // Save mood to storage or backend
+  const handleStartQuiz = () => {
+    console.log(`Starting ${quizType} quiz`);
+    // This would open the appropriate quiz dialog
+    setShowQuizReminder(false);
+  };
+
+  const handleDismissQuiz = () => {
+    setShowQuizReminder(false);
   };
 
   return (
@@ -42,26 +53,14 @@ const Today = () => {
         </p>
       </div>
 
-      {/* Morning Mood Check or Evening Check-in */}
-      <div className="mb-6">
-        {isEvening ? (
-          <EveningCheckIn />
-        ) : (
-          <>
-            <MoodSlider onMoodChange={handleMoodChange} />
-            
-            {/* Daily Focus Input */}
-            <div className="mt-4">
-              <Input
-                placeholder="What's one thing you want to focus on today?"
-                value={focusInput}
-                onChange={(e) => setFocusInput(e.target.value)}
-                className="bg-white/80 border-0 shadow-sm"
-              />
-            </div>
-          </>
-        )}
-      </div>
+      {/* Quiz Reminder */}
+      {showQuizReminder && (
+        <QuizReminder
+          type={quizType}
+          onStartQuiz={handleStartQuiz}
+          onDismiss={handleDismissQuiz}
+        />
+      )}
 
       {/* AI Assistant Suggestions */}
       <AIAssistantPanel />

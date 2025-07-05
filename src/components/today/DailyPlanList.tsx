@@ -2,60 +2,109 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, Clock, Flame } from "lucide-react";
+import { Check, Clock, Target } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface PlanItem {
   id: string;
   title: string;
-  type: "habit" | "activity" | "task" | "workout";
+  type: "goal" | "plan";
   completed: boolean;
-  streak?: number;
   time?: string;
   priority?: "low" | "medium" | "high";
 }
 
-const mockPlanItems: PlanItem[] = [
-  { id: "1", title: "Morning journal", type: "habit", completed: false, streak: 4 },
-  { id: "2", title: "Drink water", type: "habit", completed: true, streak: 12 },
-  { id: "3", title: "10-minute meditation", type: "activity", completed: false },
-  { id: "4", title: "Review presentation", type: "task", completed: false, time: "2:00 PM", priority: "high" },
-  { id: "5", title: "Upper body workout", type: "workout", completed: false, time: "6:00 PM" },
+const mockGoals: PlanItem[] = [
+  { id: "g1", title: "Finish presentation slides", type: "goal", completed: false, priority: "high" },
+  { id: "g2", title: "Exercise for 30 minutes", type: "goal", completed: false },
+  { id: "g3", title: "Read 20 pages", type: "goal", completed: true },
 ];
 
-const sectionIcons = {
-  habit: "🔁",
-  activity: "✨", 
-  task: "📌",
-  workout: "💪"
-};
-
-const sectionTitles = {
-  habit: "Habits",
-  activity: "Activities", 
-  task: "Tasks",
-  workout: "Workouts"
-};
+const mockPlanItems: PlanItem[] = [
+  { id: "p1", title: "Morning journal", type: "plan", completed: false, time: "7:00 AM" },
+  { id: "p2", title: "Team standup", type: "plan", completed: true, time: "9:00 AM" },
+  { id: "p3", title: "Work on presentation", type: "plan", completed: false, time: "10:00 AM" },
+  { id: "p4", title: "Lunch break", type: "plan", completed: false, time: "12:30 PM" },
+  { id: "p5", title: "Client call", type: "plan", completed: false, time: "2:00 PM", priority: "high" },
+  { id: "p6", title: "Gym workout", type: "plan", completed: false, time: "6:00 PM" },
+  { id: "p7", title: "Evening reading", type: "plan", completed: false, time: "8:00 PM" },
+];
 
 export const DailyPlanList = () => {
+  const [goals, setGoals] = useState(mockGoals);
   const [planItems, setPlanItems] = useState(mockPlanItems);
 
-  const toggleComplete = (id: string) => {
-    setPlanItems(items => 
-      items.map(item => 
-        item.id === id ? { ...item, completed: !item.completed } : item
-      )
-    );
+  const toggleComplete = (id: string, type: "goal" | "plan") => {
+    if (type === "goal") {
+      setGoals(items => 
+        items.map(item => 
+          item.id === id ? { ...item, completed: !item.completed } : item
+        )
+      );
+    } else {
+      setPlanItems(items => 
+        items.map(item => 
+          item.id === id ? { ...item, completed: !item.completed } : item
+        )
+      );
+    }
   };
 
-  const groupedItems = planItems.reduce((acc, item) => {
-    if (!acc[item.type]) acc[item.type] = [];
-    acc[item.type].push(item);
-    return acc;
-  }, {} as Record<string, PlanItem[]>);
+  const allItems = [...goals, ...planItems];
+  const completedCount = allItems.filter(item => item.completed).length;
+  const totalCount = allItems.length;
 
-  const completedCount = planItems.filter(item => item.completed).length;
-  const totalCount = planItems.length;
+  const renderItem = (item: PlanItem) => (
+    <div
+      key={item.id}
+      className={cn(
+        "flex items-center gap-3 p-3 rounded-lg border transition-all",
+        item.completed 
+          ? "bg-muted/50 border-muted" 
+          : "bg-background border-border hover:border-primary/20"
+      )}
+    >
+      <Button
+        variant="ghost"
+        size="sm"
+        className={cn(
+          "w-6 h-6 rounded-full p-0 border-2",
+          item.completed
+            ? "bg-primary border-primary text-primary-foreground"
+            : "border-muted hover:border-primary"
+        )}
+        onClick={() => toggleComplete(item.id, item.type)}
+      >
+        {item.completed && <Check className="w-3 h-3" />}
+      </Button>
+      
+      <div className="flex-1">
+        <div className={cn(
+          "font-medium",
+          item.completed ? "line-through text-muted-foreground" : "text-foreground"
+        )}>
+          {item.title}
+        </div>
+        
+        <div className="flex items-center gap-2 mt-1">
+          {item.time && (
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <Clock className="w-3 h-3" />
+              {item.time}
+            </div>
+          )}
+          {item.priority && (
+            <Badge 
+              variant={item.priority === "high" ? "destructive" : "secondary"}
+              className="text-xs px-2 py-0"
+            >
+              {item.priority}
+            </Badge>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <Card className="p-6">
@@ -71,76 +120,29 @@ export const DailyPlanList = () => {
       </div>
 
       <div className="space-y-6">
-        {Object.entries(groupedItems).map(([type, items]) => (
-          <div key={type}>
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-lg">{sectionIcons[type as keyof typeof sectionIcons]}</span>
-              <h4 className="font-medium text-foreground">
-                {sectionTitles[type as keyof typeof sectionTitles]}
-              </h4>
-            </div>
-            
-            <div className="space-y-2">
-              {items.map((item) => (
-                <div
-                  key={item.id}
-                  className={cn(
-                    "flex items-center gap-3 p-3 rounded-lg border transition-all",
-                    item.completed 
-                      ? "bg-muted/50 border-muted" 
-                      : "bg-background border-border hover:border-primary/20"
-                  )}
-                >
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={cn(
-                      "w-6 h-6 rounded-full p-0 border-2",
-                      item.completed
-                        ? "bg-primary border-primary text-primary-foreground"
-                        : "border-muted hover:border-primary"
-                    )}
-                    onClick={() => toggleComplete(item.id)}
-                  >
-                    {item.completed && <Check className="w-3 h-3" />}
-                  </Button>
-                  
-                  <div className="flex-1">
-                    <div className={cn(
-                      "font-medium",
-                      item.completed ? "line-through text-muted-foreground" : "text-foreground"
-                    )}>
-                      {item.title}
-                    </div>
-                    
-                    <div className="flex items-center gap-2 mt-1">
-                      {item.time && (
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <Clock className="w-3 h-3" />
-                          {item.time}
-                        </div>
-                      )}
-                      {item.priority && (
-                        <Badge 
-                          variant={item.priority === "high" ? "destructive" : "secondary"}
-                          className="text-xs px-2 py-0"
-                        >
-                          {item.priority}
-                        </Badge>
-                      )}
-                      {item.streak && item.streak > 0 && (
-                        <div className="flex items-center gap-1 text-xs text-orange-600">
-                          <Flame className="w-3 h-3" />
-                          {item.streak} days
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+        {/* Goals Section */}
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <Target className="w-5 h-5 text-primary" />
+            <h4 className="font-medium text-foreground">Today's Goals</h4>
           </div>
-        ))}
+          
+          <div className="space-y-2">
+            {goals.map(renderItem)}
+          </div>
+        </div>
+
+        {/* Daily Plan Section */}
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <Clock className="w-5 h-5 text-primary" />
+            <h4 className="font-medium text-foreground">Daily Schedule</h4>
+          </div>
+          
+          <div className="space-y-2">
+            {planItems.map(renderItem)}
+          </div>
+        </div>
       </div>
     </Card>
   );
