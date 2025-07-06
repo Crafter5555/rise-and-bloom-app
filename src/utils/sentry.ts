@@ -7,7 +7,7 @@ export const initSentry = () => {
   const environment = process.env.NODE_ENV || 'development';
   
   Sentry.init({
-    dsn: 'https://https://a19aed3b8a857cd63a3fd072e780e1b9@o4509622135685120.ingest.de.sentry.io/4509622152986704', // Replace with actual DSN
+    dsn: 'https://a19aed3b8a857cd63a3fd072e780e1b9@o4509622135685120.ingest.de.sentry.io/4509622152986704', // Replace with actual DSN
     environment,
     enabled: environment === 'production',
     
