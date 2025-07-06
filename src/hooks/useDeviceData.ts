@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useMobile } from './useMobile';
+import { useHealthData } from './useHealthData';
 
 export interface DeviceInsights {
   sleep: {
@@ -41,6 +42,7 @@ export const useDeviceData = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const { isNative, getData, storeData } = useMobile();
+  const { healthData, isHealthAvailable } = useHealthData();
 
   const getStoredData = async (key: string): Promise<string | null> => {
     try {
@@ -113,16 +115,19 @@ export const useDeviceData = () => {
     }
   };
 
-  // Step counter (web-based pedometer simulation)
+  // Step counter with health data integration
   const getStepCount = async (): Promise<{ count: number | null; source: 'device' | 'unavailable' }> => {
     try {
+      // Try to get from health data first
+      if (isHealthAvailable && healthData.steps !== null) {
+        return { count: healthData.steps, source: 'device' };
+      }
+
       if (!isNative) {
-        // For web, we can't access real step data
         return { count: null, source: 'unavailable' };
       }
 
-      // On native platforms, this would integrate with HealthKit/Google Fit
-      // For now, return stored manual data or unavailable
+      // Fallback to stored manual data
       const storedSteps = await getStoredData('dailySteps');
       if (storedSteps) {
         return { count: parseInt(storedSteps), source: 'device' };

@@ -1,21 +1,29 @@
 # Add project specific ProGuard rules here.
 # You can control the set of applied configuration files using the
 # proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# Keep all classes used by Capacitor
+-keep class com.getcapacitor.** { *; }
+-keep class com.lovable.riseandbloom.** { *; }
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# Keep Sentry classes
+-keep class io.sentry.** { *; }
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# Keep WebView JavaScript interface
+-keepclassmembers class * {
+    @android.webkit.JavascriptInterface <methods>;
+}
+
+# Preserve line numbers for crash reporting
+-keepattributes SourceFile,LineNumberTable
+
+# Keep React Native and JavaScript bridge
+-keep class com.facebook.react.** { *; }
+-keep class com.facebook.hermes.** { *; }
+
+# Keep health and fitness related classes
+-keep class com.google.android.gms.fitness.** { *; }
+-keep class androidx.health.** { *; }
+
+# Don't obfuscate stack traces for Sentry
+-keepattributes LineNumberTable,SourceFile

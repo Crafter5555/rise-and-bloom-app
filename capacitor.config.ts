@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.mindflow.wellness',
-  appName: 'MindFlow',
+  appId: 'com.lovable.riseandbloom',
+  appName: 'Rise and Bloom',
   webDir: 'dist',
   server: {
     androidScheme: 'https'
@@ -42,7 +42,7 @@ const config: CapacitorConfig = {
     },
     Haptics: {},
     App: {
-      launchUrl: "mindflow://",
+      launchUrl: "riseandbloom://",
     },
     Preferences: {},
   },
