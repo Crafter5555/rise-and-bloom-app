@@ -91,8 +91,10 @@ export const DebugDataView = () => {
     if (!user) return;
 
     try {
-      // Fetch all user data
-      const tables = ['habits', 'tasks', 'goals', 'daily_plans', 'habit_completions', 'activities', 'workouts'];
+      // Define table names as literal types
+      const tables: Array<'habits' | 'tasks' | 'goals' | 'daily_plans' | 'habit_completions' | 'activities' | 'workouts'> = [
+        'habits', 'tasks', 'goals', 'daily_plans', 'habit_completions', 'activities', 'workouts'
+      ];
       const userData: Record<string, any> = {};
 
       for (const table of tables) {
@@ -130,7 +132,9 @@ export const DebugDataView = () => {
     if (!user || !confirm('Are you sure you want to delete ALL your data? This action cannot be undone.')) return;
 
     try {
-      const tables = ['habit_completions', 'daily_plans', 'habits', 'tasks', 'goals', 'activities', 'workout_plans', 'workouts'];
+      const tables: Array<'habit_completions' | 'daily_plans' | 'habits' | 'tasks' | 'goals' | 'activities' | 'workout_plans' | 'workouts'> = [
+        'habit_completions', 'daily_plans', 'habits', 'tasks', 'goals', 'activities', 'workout_plans', 'workouts'
+      ];
       
       for (const table of tables) {
         await supabase

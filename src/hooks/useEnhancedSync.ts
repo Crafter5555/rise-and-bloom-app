@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 interface PendingAction {
   id: string;
   type: 'habit_completion' | 'task_update' | 'daily_plan_update' | 'goal_update';
-  table: string;
+  table: 'habit_completions' | 'tasks' | 'daily_plans' | 'goals';
   action: 'insert' | 'update' | 'delete';
   data: any;
   timestamp: number;
@@ -50,7 +50,7 @@ export const useEnhancedSync = () => {
   // Add action to queue (optimistic update)
   const queueAction = useCallback((
     type: PendingAction['type'],
-    table: string,
+    table: PendingAction['table'],
     action: 'insert' | 'update' | 'delete',
     data: any
   ) => {

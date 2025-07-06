@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from 'react';
-import { Device } from '@capacitor/device';
 import { useMobile } from './useMobile';
 
 export interface DeviceInsights {
@@ -63,14 +62,18 @@ export const useDeviceData = () => {
   // Get device information and capabilities
   const checkDeviceCapabilities = async () => {
     try {
-      const info = await Device.getInfo();
-      console.log('Device info:', info);
+      // For web, we can detect some basic info
+      const userAgent = navigator.userAgent;
+      const isIOS = /iPad|iPhone|iPod/.test(userAgent);
+      const isAndroid = /Android/.test(userAgent);
       
-      // Check if we're on a capable platform
-      const hasHealthKit = info.platform === 'ios';
-      const hasGoogleFit = info.platform === 'android';
+      console.log('Platform detection:', { isIOS, isAndroid, isNative });
       
-      return { hasHealthKit, hasGoogleFit, platform: info.platform };
+      return { 
+        hasHealthKit: isIOS && isNative, 
+        hasGoogleFit: isAndroid && isNative, 
+        platform: isNative ? (isIOS ? 'ios' : isAndroid ? 'android' : 'unknown') : 'web' 
+      };
     } catch (error) {
       console.error('Error getting device info:', error);
       return { hasHealthKit: false, hasGoogleFit: false, platform: 'web' };
@@ -78,9 +81,8 @@ export const useDeviceData = () => {
   };
 
   // Screen time estimation based on app usage (basic implementation)
-  const estimateScreenTime = async (): Promise<{ total: string; source: 'estimated' | 'unavailable' }> => {
+  const estimateScreenTime = async (): Promise<{ total: string | null; source: 'estimated' | 'unavailable' }> => {
     try {
-      const lastActiveTime = await getStoredData('lastActiveTime');
       const sessionStart = await getStoredData('sessionStart');
       
       if (sessionStart) {
