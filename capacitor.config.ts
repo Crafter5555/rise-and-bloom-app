@@ -49,7 +49,11 @@ const config: CapacitorConfig = {
   ios: {
     contentInset: 'automatic',
     scrollEnabled: true,
-    backgroundColor: '#3b82f6'
+    backgroundColor: '#3b82f6',
+    buildOptions: {
+      bundleVersion: '1.0.0',
+      marketingVersion: '1.0.0'
+    }
   },
   android: {
     buildOptions: {
@@ -58,7 +62,10 @@ const config: CapacitorConfig = {
       keystoreAlias: undefined,
       keystoreAliasPassword: undefined,
       releaseType: 'AAB',
-      signingType: 'apksigner'
+      signingType: 'apksigner',
+      minSdkVersion: 24,
+      compileSdkVersion: 34,
+      targetSdkVersion: 34
     },
     backgroundColor: '#3b82f6'
   }

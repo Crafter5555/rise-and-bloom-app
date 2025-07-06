@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MetricCard } from "@/components/ui/metric-card";
 import { ProgressRing } from "@/components/ui/progress-ring";
 import { Link } from "react-router-dom";
+import { useRealStats } from "@/hooks/useRealStats";
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -20,17 +21,42 @@ import {
   ExternalLink,
   Activity,
   Heart,
-  Zap
+  Zap,
+  Loader2
 } from "lucide-react";
 
 const Stats = () => {
-  // Mock comprehensive stats data with quiz integration
+  const { stats, isLoading, error } = useRealStats();
+
+  // Mock digital health stats (would be replaced with real data in production)
   const digitalHealthStats = {
     screenTime: { value: "4h 23m", change: "+12%", trend: "up" },
     pickups: { value: "47", change: "-8%", trend: "down" },
-    focusScore: { value: "7.2", change: "+0.5", trend: "up" },
+    focusScore: { value: stats?.overview.focusScore?.toString() || "7.2", change: "+0.5", trend: "up" },
     intentionalUsage: { value: "68%", change: "+15%", trend: "up" }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-calm pb-20 px-4 pt-6 flex items-center justify-center">
+        <div className="flex items-center gap-2">
+          <Loader2 className="w-6 h-6 animate-spin" />
+          <span>Loading your statistics...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !stats) {
+    return (
+      <div className="min-h-screen bg-gradient-calm pb-20 px-4 pt-6 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">Unable to load statistics</h2>
+          <p className="text-muted-foreground">Please try again later</p>
+        </div>
+      </div>
+    );
+  }
 
   // Quiz-based wellness data
   const quizData = {
@@ -141,15 +167,15 @@ const Stats = () => {
             <MetricCard
               icon="🔥"
               title="Current Streak"
-              value="12"
+              value={stats.overview.currentStreak.toString()}
               subtitle="days"
               color="warning"
             />
             <MetricCard
               icon="🏆"
               title="Goals Hit"
-              value="23"
-              subtitle="this month"
+              value={stats.goals.completed.toString()}
+              subtitle="completed"
               color="success"
             />
             <MetricCard
@@ -162,7 +188,7 @@ const Stats = () => {
             <MetricCard
               icon="🎯"
               title="Habit Success"
-              value="71%"
+              value={`${stats.overview.habitSuccessRate}%`}
               subtitle="this week"
               color="accent"
             />
@@ -172,9 +198,9 @@ const Stats = () => {
           <Card className="p-6 shadow-soft">
             <h3 className="text-lg font-semibold mb-4">This Week's Progress</h3>
             <div className="flex items-center justify-center">
-              <ProgressRing progress={71} size="lg">
+              <ProgressRing progress={stats.overview.weeklyCompletionRate} size="lg">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-primary">71%</div>
+                  <div className="text-2xl font-bold text-primary">{stats.overview.weeklyCompletionRate}%</div>
                   <div className="text-xs text-muted-foreground">Complete</div>
                 </div>
               </ProgressRing>
@@ -215,51 +241,51 @@ const Stats = () => {
           {/* Task Overview Metrics */}
           <div className="grid grid-cols-2 gap-4">
             <Card className="p-4 shadow-soft">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium">Today's Tasks</span>
-                <div className="flex items-center gap-1">
-                  <TrendingUp className="w-4 h-4 text-green-500" />
-                  <span className="text-xs text-green-600">+2 vs yesterday</span>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium">Today's Tasks</span>
+                  <div className="flex items-center gap-1">
+                    <TrendingUp className="w-4 h-4 text-green-500" />
+                    <span className="text-xs text-green-600">Real Data</span>
+                  </div>
                 </div>
-              </div>
-              <div className="text-2xl font-bold text-primary">8/12</div>
-              <div className="text-xs text-muted-foreground">67% complete</div>
+                <div className="text-2xl font-bold text-primary">{stats.today.completed}/{stats.today.total}</div>
+                <div className="text-xs text-muted-foreground">{stats.today.completionRate}% complete</div>
             </Card>
 
             <Card className="p-4 shadow-soft">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium">Weekly Average</span>
-                <div className="flex items-center gap-1">
-                  <TrendingUp className="w-4 h-4 text-green-500" />
-                  <span className="text-xs text-green-600">+15%</span>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium">Weekly Average</span>
+                  <div className="flex items-center gap-1">
+                    <Activity className="w-4 h-4 text-blue-500" />
+                    <span className="text-xs text-blue-600">Live</span>
+                  </div>
                 </div>
-              </div>
-              <div className="text-2xl font-bold text-success">74%</div>
-              <div className="text-xs text-muted-foreground">completion rate</div>
+                <div className="text-2xl font-bold text-success">{stats.tasks.weeklyAverage}</div>
+                <div className="text-xs text-muted-foreground">tasks per day</div>
             </Card>
 
             <Card className="p-4 shadow-soft">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium">Task Streak</span>
-                <div className="flex items-center gap-1">
-                  <TrendingUp className="w-4 h-4 text-green-500" />
-                  <span className="text-xs text-green-600">+3 days</span>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium">Task Streak</span>
+                  <div className="flex items-center gap-1">
+                    <TrendingUp className="w-4 h-4 text-green-500" />
+                    <span className="text-xs text-green-600">Active</span>
+                  </div>
                 </div>
-              </div>
-              <div className="text-2xl font-bold text-warning">9</div>
-              <div className="text-xs text-muted-foreground">consecutive days</div>
+                <div className="text-2xl font-bold text-warning">{stats.overview.currentStreak}</div>
+                <div className="text-xs text-muted-foreground">consecutive days</div>
             </Card>
 
             <Card className="p-4 shadow-soft">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium">Avg Completion</span>
-                <div className="flex items-center gap-1">
-                  <Clock className="w-4 h-4 text-blue-500" />
-                  <span className="text-xs text-blue-600">2.3h earlier</span>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium">Completion Rate</span>
+                  <div className="flex items-center gap-1">
+                    <Clock className="w-4 h-4 text-blue-500" />
+                    <span className="text-xs text-blue-600">Overall</span>
+                  </div>
                 </div>
-              </div>
-              <div className="text-2xl font-bold text-accent">2:30 PM</div>
-              <div className="text-xs text-muted-foreground">daily average</div>
+                <div className="text-2xl font-bold text-accent">{stats.tasks.completionRate}%</div>
+                <div className="text-xs text-muted-foreground">all tasks</div>
             </Card>
           </div>
 
@@ -368,25 +394,24 @@ const Stats = () => {
             <h3 className="text-lg font-semibold mb-4">Weekly Completion Trends</h3>
             <div className="space-y-4">
               <div className="grid grid-cols-7 gap-2 text-center">
-                {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, index) => {
-                  const completions = [12, 8, 15, 11, 9, 6, 7][index];
-                  const maxHeight = 15;
+                {stats.productivity.weeklyData.map((dayData, index) => {
+                  const maxHeight = Math.max(...stats.productivity.weeklyData.map(d => d.completed), 1);
                   return (
-                    <div key={day} className="flex flex-col items-center gap-2">
-                      <div className="text-xs text-muted-foreground">{day}</div>
+                    <div key={dayData.day} className="flex flex-col items-center gap-2">
+                      <div className="text-xs text-muted-foreground">{dayData.day}</div>
                       <div className="w-6 bg-muted rounded-full h-16 flex items-end overflow-hidden">
                         <div 
                           className="w-full bg-gradient-to-t from-blue-400 to-blue-600 rounded-full"
-                          style={{ height: `${(completions / maxHeight) * 100}%` }}
+                          style={{ height: `${dayData.completed === 0 ? 0 : Math.max((dayData.completed / maxHeight) * 100, 10)}%` }}
                         />
                       </div>
-                      <div className="text-xs font-medium">{completions}</div>
+                      <div className="text-xs font-medium">{dayData.completed}</div>
                     </div>
                   );
                 })}
               </div>
               <div className="text-center">
-                <div className="text-sm text-muted-foreground">Average: 9.7 tasks completed per day</div>
+                <div className="text-sm text-muted-foreground">Average: {stats.tasks.weeklyAverage} tasks completed per day</div>
               </div>
             </div>
           </Card>
