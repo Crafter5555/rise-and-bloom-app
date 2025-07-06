@@ -7,6 +7,7 @@ import { Preferences } from '@capacitor/preferences';
 import { App } from '@capacitor/app';
 import { Keyboard } from '@capacitor/keyboard';
 import { Device } from '@capacitor/device';
+import { captureException } from '@/utils/sentry';
 
 // Error logging and crash reporting
 class ErrorReporter {
@@ -307,6 +308,8 @@ export const useMobile = () => {
 
   const logError = (error: Error, context?: string) => {
     errorReporter.logError(error, context);
+    // Also send to Sentry in production
+    captureException(error, { context });
   };
 
   const getRecentErrors = () => {
