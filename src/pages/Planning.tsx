@@ -17,8 +17,9 @@ import { TasksList } from "@/components/planning/TasksList";
 import { ActivitiesList } from "@/components/planning/ActivitiesList";
 import { WorkoutsList } from "@/components/planning/WorkoutsList";
 import { WorkoutRoutinesList } from "@/components/planning/WorkoutRoutinesList";
+import { useAutoScheduling } from "@/hooks/useAutoScheduling";
 import { addDays, format, isToday, isTomorrow } from "date-fns";
-import { Calendar, Plus, CheckCircle2 } from "lucide-react";
+import { Calendar, Plus, CheckCircle2, Zap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -48,6 +49,7 @@ const Planning = () => {
   });
   
   const { user } = useAuth();
+  const { loading: autoScheduleLoading, generateAllDailyPlans } = useAutoScheduling();
 
   // Fetch metrics
   const fetchMetrics = async () => {
@@ -136,6 +138,11 @@ const Planning = () => {
     fetchMetrics();
   };
 
+  const handleAutoSchedule = async () => {
+    await generateAllDailyPlans();
+    handleDataUpdate();
+  };
+
   // Universal scheduling handlers
   const handleScheduleTask = (task: any) => {
     setSelectedItemToSchedule({ ...task, type: 'task' });
@@ -183,7 +190,7 @@ const Planning = () => {
       </div>
 
       {/* Metrics Grid */}
-      <div className="grid grid-cols-4 gap-2 mb-2">
+      <div className="grid grid-cols-4 gap-2 mb-4">
         <MetricCard
           icon="🎯"
           title="Active Goals"
@@ -208,6 +215,30 @@ const Planning = () => {
           value={metrics.dailyTasks}
           color="success"
         />
+      </div>
+
+      {/* Auto-Schedule Button */}
+      <div className="mb-6">
+        <Card className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                <Zap className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground">Auto-Schedule Your Week</h3>
+                <p className="text-sm text-muted-foreground">Automatically add habits, activities, goals & workouts to daily plans</p>
+              </div>
+            </div>
+            <Button 
+              onClick={handleAutoSchedule}
+              disabled={autoScheduleLoading}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {autoScheduleLoading ? "Scheduling..." : "Auto-Schedule"}
+            </Button>
+          </div>
+        </Card>
       </div>
 
       {/* Planning Sections */}

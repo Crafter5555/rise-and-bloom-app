@@ -7,6 +7,7 @@ import { Edit2, Trash2, Target, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { EditGoalDialog } from "@/components/dialogs/EditGoalDialog";
 import { format, isAfter } from "date-fns";
 
 interface Goal {
@@ -28,6 +29,8 @@ interface GoalsListProps {
 export const GoalsList = ({ onRefresh }: GoalsListProps) => {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -53,6 +56,18 @@ export const GoalsList = ({ onRefresh }: GoalsListProps) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleEdit = (goal: Goal) => {
+    setEditingGoal(goal);
+    setShowEditDialog(true);
+  };
+
+  const handleGoalUpdated = () => {
+    fetchGoals();
+    onRefresh?.();
+    setShowEditDialog(false);
+    setEditingGoal(null);
   };
 
   const updateGoalStatus = async (goalId: string, status: string) => {
@@ -139,8 +154,9 @@ export const GoalsList = ({ onRefresh }: GoalsListProps) => {
   }
 
   return (
-    <div className="space-y-3">
-      {goals.map((goal) => (
+    <>
+      <div className="space-y-3">
+        {goals.map((goal) => (
         <Card key={goal.id} className={`p-4 ${isOverdue(goal) ? 'border-red-200 bg-red-50' : ''}`}>
           <div className="flex items-start justify-between">
             <div className="flex-1">
@@ -202,7 +218,12 @@ export const GoalsList = ({ onRefresh }: GoalsListProps) => {
             </div>
             
             <div className="flex items-center gap-2 ml-4">
-              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-muted-foreground hover:text-foreground"
+                onClick={() => handleEdit(goal)}
+              >
                 <Edit2 className="w-4 h-4" />
               </Button>
               <Button 
@@ -215,8 +236,16 @@ export const GoalsList = ({ onRefresh }: GoalsListProps) => {
               </Button>
             </div>
           </div>
-        </Card>
-      ))}
-    </div>
+          </Card>
+        ))}
+      </div>
+
+      <EditGoalDialog
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        goal={editingGoal}
+        onGoalUpdated={handleGoalUpdated}
+      />
+    </>
   );
 };

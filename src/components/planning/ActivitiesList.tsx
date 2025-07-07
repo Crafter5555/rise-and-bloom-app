@@ -42,6 +42,8 @@ export const ActivitiesList = ({ onRefresh, onScheduleActivity }: ActivitiesList
   const [scheduledActivities, setScheduledActivities] = useState<Record<string, any[]>>({});
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [activityToDelete, setActivityToDelete] = useState<{ activity: ActivityItem; scheduledDates: string[] } | null>(null);
+  const [editingActivity, setEditingActivity] = useState<ActivityItem | null>(null);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -97,6 +99,18 @@ export const ActivitiesList = ({ onRefresh, onScheduleActivity }: ActivitiesList
     } catch (error) {
       console.error('Error fetching scheduled activities:', error);
     }
+  };
+
+  const handleEdit = (activity: ActivityItem) => {
+    setEditingActivity(activity);
+    setShowEditDialog(true);
+  };
+
+  const handleActivityUpdated = () => {
+    fetchActivities();
+    onRefresh?.();
+    setShowEditDialog(false);
+    setEditingActivity(null);
   };
 
   const toggleFavorite = async (activityId: string, isFavorite: boolean) => {
@@ -311,9 +325,14 @@ export const ActivitiesList = ({ onRefresh, onScheduleActivity }: ActivitiesList
                       >
                         <Heart className={`w-4 h-4 ${activity.is_favorite ? 'fill-current' : ''}`} />
                       </Button>
-                      <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
-                        <Edit2 className="w-4 h-4" />
-                      </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-muted-foreground hover:text-foreground"
+                onClick={() => handleEdit(activity)}
+              >
+                <Edit2 className="w-4 h-4" />
+              </Button>
                       <Button 
                         variant="ghost" 
                         size="sm" 

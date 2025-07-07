@@ -469,6 +469,38 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_all_daily_plans: {
+        Args: {
+          target_user_id: string
+          start_date?: string
+          days_ahead?: number
+        }
+        Returns: Json
+      }
+      generate_daily_activity_plans: {
+        Args: {
+          target_user_id: string
+          start_date?: string
+          days_ahead?: number
+        }
+        Returns: number
+      }
+      generate_daily_goal_plans: {
+        Args: {
+          target_user_id: string
+          start_date?: string
+          days_ahead?: number
+        }
+        Returns: number
+      }
+      generate_daily_habit_plans: {
+        Args: {
+          target_user_id: string
+          start_date?: string
+          days_ahead?: number
+        }
+        Returns: number
+      }
       generate_routine_workout_plans: {
         Args: {
           target_user_id: string
