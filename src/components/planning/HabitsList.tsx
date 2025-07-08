@@ -10,6 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ScheduleButton } from "@/components/today/ScheduleButton";
+import { EditHabitDialog } from "@/components/dialogs/EditHabitDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,6 +42,8 @@ export const HabitsList = ({ onRefresh, onScheduleHabit }: HabitsListProps) => {
   const [loading, setLoading] = useState(true);
   const [scheduledHabits, setScheduledHabits] = useState<Record<string, any[]>>({});
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
   const [habitToDelete, setHabitToDelete] = useState<{ habit: Habit; scheduledDates: string[] } | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -122,6 +125,18 @@ export const HabitsList = ({ onRefresh, onScheduleHabit }: HabitsListProps) => {
         variant: "destructive"
       });
     }
+  };
+
+  const handleEdit = (habit: Habit) => {
+    setEditingHabit(habit);
+    setEditDialogOpen(true);
+  };
+
+  const handleHabitUpdated = () => {
+    fetchHabits();
+    onRefresh?.();
+    setEditDialogOpen(false);
+    setEditingHabit(null);
   };
 
   const handleDeleteHabit = (habit: Habit) => {
@@ -274,7 +289,12 @@ export const HabitsList = ({ onRefresh, onScheduleHabit }: HabitsListProps) => {
                     size="sm"
                     className="text-primary"
                   />
-                  <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-muted-foreground hover:text-foreground"
+                    onClick={() => handleEdit(habit)}
+                  >
                     <Edit2 className="w-4 h-4" />
                   </Button>
                   <Button 
@@ -291,6 +311,14 @@ export const HabitsList = ({ onRefresh, onScheduleHabit }: HabitsListProps) => {
           );
         })}
       </div>
+
+      {/* Edit Dialog */}
+      <EditHabitDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        habit={editingHabit}
+        onHabitUpdated={handleHabitUpdated}
+      />
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ScheduleButton } from "@/components/today/ScheduleButton";
+import { EditTaskDialog } from "@/components/dialogs/EditTaskDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,6 +41,8 @@ export const TasksList = ({ onRefresh, onScheduleTask }: TasksListProps) => {
   const [loading, setLoading] = useState(true);
   const [scheduledTasks, setScheduledTasks] = useState<Record<string, any[]>>({});
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [taskToDelete, setTaskToDelete] = useState<{ task: Task; scheduledDates: string[] } | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -95,6 +98,18 @@ export const TasksList = ({ onRefresh, onScheduleTask }: TasksListProps) => {
     } catch (error) {
       console.error('Error fetching scheduled tasks:', error);
     }
+  };
+
+  const handleEdit = (task: Task) => {
+    setEditingTask(task);
+    setEditDialogOpen(true);
+  };
+
+  const handleTaskUpdated = () => {
+    fetchTasks();
+    onRefresh?.();
+    setEditDialogOpen(false);
+    setEditingTask(null);
   };
 
   const handleDeleteTask = (task: Task) => {
@@ -290,7 +305,12 @@ export const TasksList = ({ onRefresh, onScheduleTask }: TasksListProps) => {
                     size="sm"
                     className="text-primary"
                   />
-                  <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-muted-foreground hover:text-foreground"
+                    onClick={() => handleEdit(task)}
+                  >
                     <Edit2 className="w-4 h-4" />
                   </Button>
                   <Button 
@@ -307,6 +327,14 @@ export const TasksList = ({ onRefresh, onScheduleTask }: TasksListProps) => {
           );
         })}
       </div>
+
+      {/* Edit Dialog */}
+      <EditTaskDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        task={editingTask}
+        onTaskUpdated={handleTaskUpdated}
+      />
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
