@@ -9,6 +9,7 @@ import { MetricCard } from "@/components/ui/metric-card";
 import { ProgressRing } from "@/components/ui/progress-ring";
 import { Link } from "react-router-dom";
 import { useRealStats } from "@/hooks/useRealStats";
+import { RealTimeStats } from "@/components/stats/RealTimeStats";
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -162,6 +163,7 @@ const Stats = () => {
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-6">
+          <RealTimeStats />
           {/* Key Metrics */}
           <div className="grid grid-cols-2 gap-4">
             <MetricCard

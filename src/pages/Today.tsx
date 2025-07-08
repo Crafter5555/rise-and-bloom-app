@@ -1,21 +1,25 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, LogOut, Settings } from "lucide-react";
+import { Plus, LogOut, Settings, Calendar } from "lucide-react";
 import { DailyPlanList } from "@/components/today/DailyPlanList";
 import { InsightsPanel } from "@/components/today/InsightsPanel";
 import { AIAssistantPanel } from "@/components/today/AIAssistantCard";
 import { EveningCheckIn } from "@/components/today/EveningCheckIn";
 import { AddToPlanSheet } from "@/components/today/AddToPlanSheet";
+import { QuickAddSheet } from "@/components/today/QuickAddSheet";
 import { QuizReminder } from "@/components/today/QuizReminder";
 import { MorningPlanningDialog } from "@/components/dialogs/MorningPlanningDialog";
 import { EveningReflectionDialog } from "@/components/dialogs/EveningReflectionDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { hasCompletedMorningQuiz, hasCompletedEveningQuiz } from "@/utils/quizStorage";
+import { SyncStatus } from "@/components/mobile/SyncStatus";
+import { useMobileOptimizations } from "@/components/mobile/MobileOptimizations";
 
 const Today = () => {
   const [addToPlanOpen, setAddToPlanOpen] = useState(false);
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [showQuizReminder, setShowQuizReminder] = useState(true);
   const [quizType, setQuizType] = useState<"morning" | "evening">("morning");
   const [isEvening, setIsEvening] = useState(false);
@@ -29,6 +33,7 @@ const Today = () => {
   
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const { triggerHaptic, handleMobileClick } = useMobileOptimizations();
   const currentDate = new Date();
   const dayName = currentDate.toLocaleDateString('en-US', { weekday: 'long' });
   const monthDay = currentDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
@@ -113,7 +118,7 @@ const Today = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 pb-20 px-4 pt-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 pb-20 px-4 pt-6 safe-area-inset">
       {/* Personalized Greeting */}
       <div className="mb-6">
         <div className="flex justify-between items-start mb-3">
@@ -121,24 +126,27 @@ const Today = () => {
             <h1 className="text-2xl font-bold text-foreground mb-1">
               Good {isEvening ? 'evening' : 'morning'}, {userName} 👋
             </h1>
-            <p className="text-base text-muted-foreground">
-              {dayName}, {monthDay}
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-base text-muted-foreground">
+                {dayName}, {monthDay}
+              </p>
+              <SyncStatus />
+            </div>
           </div>
           <div className="flex gap-2">
             <Button 
               variant="ghost" 
               size="icon"
-              onClick={() => navigate('/settings')}
-              className="text-muted-foreground hover:text-foreground"
+              onClick={handleMobileClick(() => navigate('/settings'))}
+              className="text-muted-foreground hover:text-foreground touch-target"
             >
               <Settings className="w-5 h-5" />
             </Button>
             <Button 
               variant="ghost" 
               size="icon"
-              onClick={signOut}
-              className="text-muted-foreground hover:text-foreground"
+              onClick={handleMobileClick(signOut)}
+              className="text-muted-foreground hover:text-foreground touch-target"
             >
               <LogOut className="w-5 h-5" />
             </Button>
@@ -176,16 +184,33 @@ const Today = () => {
       {/* Today's Plan List */}
       <DailyPlanList key={refreshKey} />
 
-      {/* Add to Plan Button */}
+      {/* Quick Add Button - Primary */}
       <Button
-        onClick={() => setAddToPlanOpen(true)}
-        className="fixed bottom-24 right-6 w-14 h-14 rounded-full shadow-lg bg-primary hover:bg-primary/90"
+        onClick={handleMobileClick(() => setQuickAddOpen(true))}
+        className="fixed bottom-24 right-6 w-14 h-14 rounded-full shadow-lg bg-primary hover:bg-primary/90 touch-target z-50 safe-area-bottom"
         size="icon"
       >
         <Plus className="w-6 h-6" />
       </Button>
 
-      {/* Add to Plan Sheet */}
+      {/* Advanced Add Button - Secondary */}
+      <Button
+        onClick={handleMobileClick(() => setAddToPlanOpen(true))}
+        variant="outline"
+        className="fixed bottom-24 right-24 w-12 h-12 rounded-full shadow-lg bg-background border-2 touch-target z-40"
+        size="icon"
+      >
+        <Calendar className="w-5 h-5" />
+      </Button>
+
+      {/* Quick Add Sheet */}
+      <QuickAddSheet
+        open={quickAddOpen}
+        onOpenChange={setQuickAddOpen}
+        onItemAdded={handlePlanAdded}
+      />
+
+      {/* Advanced Add to Plan Sheet */}
       <AddToPlanSheet 
         open={addToPlanOpen} 
         onOpenChange={setAddToPlanOpen}
