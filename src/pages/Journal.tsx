@@ -1,15 +1,19 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { MorningPlanningDialog } from "@/components/dialogs/MorningPlanningDialog";
 import { EveningReflectionDialog } from "@/components/dialogs/EveningReflectionDialog";
-import { Plus } from "lucide-react";
+import { VoiceInput } from "@/components/journal/VoiceInput";
+import { Plus, Edit3 } from "lucide-react";
 import { getRecentQuizEntries, hasCompletedMorningQuiz, hasCompletedEveningQuiz, getTodayDateKey } from "@/utils/quizStorage";
 
 const Journal = () => {
   const [morningPlanningOpen, setMorningPlanningOpen] = useState(false);
   const [eveningReflectionOpen, setEveningReflectionOpen] = useState(false);
   const [recentEntries, setRecentEntries] = useState<Array<{ date: string; entry: any }>>([]);
+  const [quickNote, setQuickNote] = useState("");
+  const [showQuickNote, setShowQuickNote] = useState(false);
 
   useEffect(() => {
     setRecentEntries(getRecentQuizEntries());
@@ -18,6 +22,26 @@ const Journal = () => {
   const todayKey = getTodayDateKey();
   const hasTodayMorning = hasCompletedMorningQuiz();
   const hasTodayEvening = hasCompletedEveningQuiz();
+
+  const handleVoiceTranscription = (text: string) => {
+    setQuickNote(prev => prev + (prev ? ' ' : '') + text);
+  };
+
+  const saveQuickNote = () => {
+    if (quickNote.trim()) {
+      // Save to localStorage for now (could be enhanced to save to Supabase)
+      const savedNotes = JSON.parse(localStorage.getItem('quickNotes') || '[]');
+      savedNotes.unshift({
+        id: Date.now(),
+        text: quickNote.trim(),
+        timestamp: new Date().toISOString()
+      });
+      localStorage.setItem('quickNotes', JSON.stringify(savedNotes.slice(0, 50))); // Keep last 50
+      
+      setQuickNote("");
+      setShowQuickNote(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-calm pb-20 px-4 pt-6">
@@ -155,12 +179,39 @@ const Journal = () => {
         )}
       </div>
 
+      {/* Quick Note Section */}
+      {showQuickNote && (
+        <Card className="p-4 mb-6 shadow-soft">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-foreground">Quick Note</h3>
+              <VoiceInput onTranscription={handleVoiceTranscription} />
+            </div>
+            <Textarea
+              value={quickNote}
+              onChange={(e) => setQuickNote(e.target.value)}
+              placeholder="Write a quick note or use voice input..."
+              className="min-h-[120px]"
+            />
+            <div className="flex gap-2">
+              <Button onClick={saveQuickNote} disabled={!quickNote.trim()}>
+                Save Note
+              </Button>
+              <Button variant="outline" onClick={() => setShowQuickNote(false)}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* Floating Action Button */}
       <Button
         className="fixed bottom-24 right-6 w-14 h-14 rounded-full shadow-strong bg-primary hover:bg-primary-dark"
         size="icon"
+        onClick={() => setShowQuickNote(true)}
       >
-        <Plus className="w-6 h-6" />
+        <Edit3 className="w-6 h-6" />
       </Button>
 
       {/* Morning Planning Dialog */}

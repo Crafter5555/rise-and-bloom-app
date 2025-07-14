@@ -5,11 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, User, Key, Shield, AlertTriangle } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { ArrowLeft, User, Key, Shield, AlertTriangle, Moon, Sun, FileText, Download, ExternalLink } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { useMobile } from "@/hooks/useMobile";
+import { supabase } from "@/integrations/supabase/client";
 
 const Settings = () => {
   const [loading, setLoading] = useState(false);
@@ -18,6 +20,10 @@ const Settings = () => {
   const [email, setEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [darkMode, setDarkMode] = useState(
+    localStorage.getItem('theme') === 'dark' || 
+    (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)
+  );
   
   const { user, signOut, updateProfile, updatePassword } = useAuth();
   const { toast } = useToast();
@@ -31,6 +37,69 @@ const Settings = () => {
       setDisplayName(user.user_metadata?.display_name || "");
     }
   }, [user]);
+
+  const toggleDarkMode = () => {
+    const newMode = !darkMode;
+    setDarkMode(newMode);
+    if (newMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+    if (isNative) hapticFeedback();
+  };
+
+  const handleDataExport = async () => {
+    setLoading(true);
+    if (isNative) hapticFeedback();
+    
+    try {
+      // Export all user data
+      const { data: tasks } = await supabase.from('tasks').select('*').eq('user_id', user?.id);
+      const { data: habits } = await supabase.from('habits').select('*').eq('user_id', user?.id);
+      const { data: activities } = await supabase.from('activities').select('*').eq('user_id', user?.id);
+      const { data: goals } = await supabase.from('goals').select('*').eq('user_id', user?.id);
+      const { data: dailyPlans } = await supabase.from('daily_plans').select('*').eq('user_id', user?.id);
+      const { data: profile } = await supabase.from('profiles').select('*').eq('user_id', user?.id);
+      
+      const exportData = {
+        exported_at: new Date().toISOString(),
+        user_id: user?.id,
+        email: user?.email,
+        profile,
+        tasks,
+        habits,
+        activities,
+        goals,
+        daily_plans: dailyPlans
+      };
+      
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `rise-and-bloom-data-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Data exported",
+        description: "Your data has been downloaded as a JSON file.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Export failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -281,6 +350,114 @@ const Settings = () => {
                 {loading ? "Updating..." : "Update Password"}
               </Button>
             </form>
+          </CardContent>
+        </Card>
+
+        {/* Preferences */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Sun className="w-5 h-5" />
+              Preferences
+            </CardTitle>
+            <CardDescription>
+              Customize your app experience.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label className="text-base">Dark Mode</Label>
+                <p className="text-sm text-muted-foreground">
+                  Toggle between light and dark themes
+                </p>
+              </div>
+              <Switch
+                checked={darkMode}
+                onCheckedChange={toggleDarkMode}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Privacy & Legal */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5" />
+              Privacy & Legal
+            </CardTitle>
+            <CardDescription>
+              Review our policies and legal information.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-base">Privacy Policy</Label>
+                <p className="text-sm text-muted-foreground">
+                  Learn how we protect your data
+                </p>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => window.open('https://lovable.dev/privacy', '_blank')}
+              >
+                <ExternalLink className="w-4 h-4" />
+              </Button>
+            </div>
+            
+            <Separator />
+            
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-base">Terms of Service</Label>
+                <p className="text-sm text-muted-foreground">
+                  Review our terms and conditions
+                </p>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => window.open('https://lovable.dev/terms', '_blank')}
+              >
+                <ExternalLink className="w-4 h-4" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Data Management */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Download className="w-5 h-5" />
+              Data Management
+            </CardTitle>
+            <CardDescription>
+              Export your data for backup or GDPR compliance.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="p-4 bg-muted/50 rounded-lg border">
+                <h4 className="font-medium mb-2">Export Your Data</h4>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Download all your personal data in JSON format. This includes your tasks, 
+                  habits, activities, goals, and profile information.
+                </p>
+                <Button 
+                  variant="outline" 
+                  onClick={handleDataExport}
+                  disabled={loading}
+                  size="sm"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  {loading ? "Exporting..." : "Export Data"}
+                </Button>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
