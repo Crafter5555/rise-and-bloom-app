@@ -50,6 +50,116 @@ export type Database = {
         }
         Relationships: []
       }
+      app_categories: {
+        Row: {
+          color: string | null
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      app_usage_sessions: {
+        Row: {
+          app_name: string
+          category_id: string | null
+          created_at: string
+          duration_minutes: number | null
+          end_time: string | null
+          id: string
+          session_date: string
+          start_time: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          app_name: string
+          category_id?: string | null
+          created_at?: string
+          duration_minutes?: number | null
+          end_time?: string | null
+          id?: string
+          session_date?: string
+          start_time: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          app_name?: string
+          category_id?: string | null
+          created_at?: string
+          duration_minutes?: number | null
+          end_time?: string | null
+          id?: string
+          session_date?: string
+          start_time?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_usage_sessions_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "app_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      daily_device_stats: {
+        Row: {
+          created_at: string
+          first_pickup_time: string | null
+          focus_score: number | null
+          id: string
+          last_activity_time: string | null
+          longest_session_minutes: number | null
+          stat_date: string
+          total_pickups: number | null
+          total_screen_time_minutes: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          first_pickup_time?: string | null
+          focus_score?: number | null
+          id?: string
+          last_activity_time?: string | null
+          longest_session_minutes?: number | null
+          stat_date: string
+          total_pickups?: number | null
+          total_screen_time_minutes?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          first_pickup_time?: string | null
+          focus_score?: number | null
+          id?: string
+          last_activity_time?: string | null
+          longest_session_minutes?: number | null
+          stat_date?: string
+          total_pickups?: number | null
+          total_screen_time_minutes?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       daily_plans: {
         Row: {
           actual_duration_minutes: number | null
@@ -99,6 +209,90 @@ export type Database = {
           plan_date?: string
           scheduled_time?: string | null
           title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      digital_wellbeing_settings: {
+        Row: {
+          break_interval_minutes: number | null
+          break_reminders_enabled: boolean | null
+          created_at: string
+          daily_screen_time_goal_minutes: number | null
+          focus_session_goal_minutes: number | null
+          id: string
+          intentionality_prompts_enabled: boolean | null
+          notification_settings: Json | null
+          tracking_enabled: boolean | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          break_interval_minutes?: number | null
+          break_reminders_enabled?: boolean | null
+          created_at?: string
+          daily_screen_time_goal_minutes?: number | null
+          focus_session_goal_minutes?: number | null
+          id?: string
+          intentionality_prompts_enabled?: boolean | null
+          notification_settings?: Json | null
+          tracking_enabled?: boolean | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          break_interval_minutes?: number | null
+          break_reminders_enabled?: boolean | null
+          created_at?: string
+          daily_screen_time_goal_minutes?: number | null
+          focus_session_goal_minutes?: number | null
+          id?: string
+          intentionality_prompts_enabled?: boolean | null
+          notification_settings?: Json | null
+          tracking_enabled?: boolean | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      focus_sessions: {
+        Row: {
+          created_at: string
+          duration_minutes: number | null
+          end_time: string | null
+          id: string
+          interruptions: number | null
+          notes: string | null
+          quality_rating: number | null
+          session_type: string | null
+          start_time: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_minutes?: number | null
+          end_time?: string | null
+          id?: string
+          interruptions?: number | null
+          notes?: string | null
+          quality_rating?: number | null
+          session_type?: string | null
+          start_time: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          duration_minutes?: number | null
+          end_time?: string | null
+          id?: string
+          interruptions?: number | null
+          notes?: string | null
+          quality_rating?: number | null
+          session_type?: string | null
+          start_time?: string
           updated_at?: string
           user_id?: string
         }
