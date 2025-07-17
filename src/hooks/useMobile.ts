@@ -7,7 +7,7 @@ import { Preferences } from '@capacitor/preferences';
 import { App } from '@capacitor/app';
 import { Keyboard } from '@capacitor/keyboard';
 import { Device } from '@capacitor/device';
-// Removed Sentry import to fix build compatibility issue
+// Crash reporting without external dependencies for mobile compatibility
 
 // Error logging and crash reporting
 class ErrorReporter {
@@ -48,7 +48,7 @@ class ErrorReporter {
 
   private async sendToCrashReporting(errorEntry: any) {
     try {
-      // This would integrate with services like Sentry, Crashlytics, etc.
+      // This would integrate with crash reporting services in production
       // For now, we'll store in local storage for debugging
       const storedErrors = await this.getStoredErrors();
       storedErrors.push(errorEntry);
@@ -308,7 +308,7 @@ export const useMobile = () => {
 
   const logError = (error: Error, context?: string) => {
     errorReporter.logError(error, context);
-    // Note: Sentry integration temporarily disabled for mobile compatibility
+    // Note: External crash reporting disabled for mobile compatibility
   };
 
   const getRecentErrors = () => {

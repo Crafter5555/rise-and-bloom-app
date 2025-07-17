@@ -16,6 +16,18 @@ android {
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    
+    // Production signing configuration
+    signingConfigs {
+        release {
+            // TODO: Configure production signing
+            // storeFile file('path/to/your/keystore.jks')
+            // storePassword 'your-store-password'
+            // keyAlias 'your-key-alias'
+            // keyPassword 'your-key-password'
+        }
+    }
+    
     buildTypes {
         debug {
             debuggable true
@@ -30,6 +42,10 @@ android {
             
             // Enable R8 full mode for better optimization
             android.enableR8.fullMode = true
+            
+            // Production signing configuration
+            // Note: You'll need to create a keystore and configure signing
+            // signingConfig signingConfigs.release
         }
     }
 }
