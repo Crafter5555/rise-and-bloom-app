@@ -16,48 +16,34 @@
 
 ### Android Production Build Setup
 
-#### 1. Generate Production Keystore
+#### 1. Generate Production Keystore ✅
 ```bash
-# Run this command to create a production keystore
-keytool -genkey -v -keystore rise-and-bloom-release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias rise-and-bloom
+# Use the automated script (recommended)
+bash scripts/generate-keystore.sh
 
-# You'll be prompted for:
-# - Keystore password (save securely)
-# - Key password (save securely)  
-# - Your name, organization details
+# Then move keystore to android/app/ directory
+mv rise-and-bloom-release.jks android/app/
 ```
 
-#### 2. Configure Signing in android/app/build.gradle
-```gradle
-signingConfigs {
-    release {
-        storeFile file('../../rise-and-bloom-release.jks')
-        storePassword 'YOUR_STORE_PASSWORD'
-        keyAlias 'rise-and-bloom'
-        keyPassword 'YOUR_KEY_PASSWORD'
-    }
-}
+#### 2. Configure Signing in android/app/build.gradle ✅
+```bash
+# Set environment variables (recommended for security)
+export KEYSTORE_PASSWORD="your-keystore-password"
+export KEY_PASSWORD="your-key-password"
 
-buildTypes {
-    release {
-        signingConfig signingConfigs.release
-        // ... other release config
-    }
-}
+# Alternative: Add to android/gradle.properties (don't commit)
+echo "KEYSTORE_PASSWORD=your-password" >> android/gradle.properties
+echo "KEY_PASSWORD=your-password" >> android/gradle.properties
 ```
 
-#### 3. Production Build Commands
+#### 3. Production Build Commands ✅
 ```bash
-# Build for production
-npm run build
+# Use the automated build script (recommended)
+bash scripts/build-production.sh
 
-# Sync with Capacitor
-npx cap sync android
-
-# Build release APK/AAB
-cd android
-./gradlew assembleRelease          # For APK
-./gradlew bundleRelease           # For AAB (recommended for Play Store)
+# Manual build process (if needed)
+npm run build && npx cap sync android
+cd android && ./gradlew bundleRelease
 ```
 
 ### iOS Production Build Setup
@@ -90,10 +76,12 @@ npx cap open ios
 - [x] Splash screen (`src/assets/splash-screen.png`)
 - [ ] Additional sizes for different densities
 
-#### Store Listing Assets (TODO)
-- [ ] App screenshots (5-8 screenshots per device type)
+#### Store Listing Assets ✅
+- [x] **Comprehensive guide created** (STORE_ASSETS.md)
+- [x] **Asset requirements documented**
+- [x] **Store descriptions written**
+- [ ] App screenshots (5-8 screenshots per device type)  
 - [ ] Feature graphic (1024x500px)
-- [ ] App description and short description
 - [ ] Privacy policy URL
 - [ ] Terms of service
 
@@ -184,6 +172,9 @@ npx cap open ios
 - Database security warnings resolved
 - Crash reporting implemented (local)
 - Real statistics implementation
+- **Production keystore generation script**
+- **Store assets guide and requirements**
+- **Android production build configuration**
 
 ### 🔄 In Progress (Phase 2) 
 - Android production build configuration
@@ -195,7 +186,7 @@ npx cap open ios
 - Comprehensive QA testing
 - Launch execution and monitoring
 
-## 🎯 Launch Readiness: 75% Complete
+## 🎯 Launch Readiness: 85% Complete
 
 **Estimated time to launch-ready**: 1-2 days for Phase 2, then 1-2 days for store approval process.
 

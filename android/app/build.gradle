@@ -20,11 +20,10 @@ android {
     // Production signing configuration
     signingConfigs {
         release {
-            // TODO: Configure production signing
-            // storeFile file('path/to/your/keystore.jks')
-            // storePassword 'your-store-password'
-            // keyAlias 'your-key-alias'
-            // keyPassword 'your-key-password'
+            storeFile file('rise-and-bloom-release.jks')
+            storePassword System.getenv('KEYSTORE_PASSWORD') ?: project.findProperty('KEYSTORE_PASSWORD') ?: ''
+            keyAlias 'rise-and-bloom'
+            keyPassword System.getenv('KEY_PASSWORD') ?: project.findProperty('KEY_PASSWORD') ?: ''
         }
     }
     
@@ -44,8 +43,7 @@ android {
             android.enableR8.fullMode = true
             
             // Production signing configuration
-            // Note: You'll need to create a keystore and configure signing
-            // signingConfig signingConfigs.release
+            signingConfig signingConfigs.release
         }
     }
 }
