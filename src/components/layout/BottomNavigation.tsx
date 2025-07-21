@@ -25,6 +25,11 @@ const navigation = [
     icon: "📅"
   },
   {
+    name: "Community",
+    path: "/community",
+    icon: "👥"
+  },
+  {
     name: "Stats",
     path: "/stats",
     icon: "📊"

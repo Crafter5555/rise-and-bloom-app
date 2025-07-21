@@ -173,7 +173,7 @@ export const CorrelationAnalysis = () => {
               <Tooltip />
               <Bar 
                 dataKey="correlation" 
-                fill={(entry) => entry > 0 ? "#82ca9d" : "#ff7300"}
+                fill="#82ca9d"
                 name="Correlation"
               />
             </BarChart>

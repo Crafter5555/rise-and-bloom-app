@@ -15,6 +15,9 @@ import DigitalWellbeing from "@/pages/DigitalWellbeing";
 import Stats from "@/pages/Stats";
 import Settings from "@/pages/Settings";
 import Debug from "@/pages/Debug";
+import { lazy, Suspense } from "react";
+
+const Community = lazy(() => import("@/pages/Community"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -43,6 +46,11 @@ function App() {
                 <Route path="/planning" element={<Planning />} />
                 <Route path="/calendar" element={<Calendar />} />
                 <Route path="/digital-wellbeing" element={<DigitalWellbeing />} />
+                <Route path="/community" element={
+                  <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+                    <Community />
+                  </Suspense>
+                } />
                 <Route path="/stats" element={<Stats />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/debug" element={<Debug />} />
