@@ -18,6 +18,7 @@ import Debug from "@/pages/Debug";
 import { lazy, Suspense } from "react";
 
 const Community = lazy(() => import("@/pages/Community"));
+const Insights = lazy(() => import("@/pages/Insights"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -49,6 +50,11 @@ function App() {
                 <Route path="/community" element={
                   <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
                     <Community />
+                  </Suspense>
+                } />
+                <Route path="/insights" element={
+                  <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+                    <Insights />
                   </Suspense>
                 } />
                 <Route path="/stats" element={<Stats />} />

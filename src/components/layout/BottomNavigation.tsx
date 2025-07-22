@@ -30,9 +30,9 @@ const navigation = [
     icon: "👥"
   },
   {
-    name: "Stats",
-    path: "/stats",
-    icon: "📊"
+    name: "Insights",
+    path: "/insights",
+    icon: "🧠"
   }
 ];
 
