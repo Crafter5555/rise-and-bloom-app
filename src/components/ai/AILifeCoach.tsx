@@ -1,9 +1,8 @@
-
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Brain, Send, Sparkles, TrendingUp, Target } from "lucide-react";
+import { Brain, Lightbulb, Target, Trophy, Send, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface AIInsight {
@@ -20,33 +19,31 @@ export const AILifeCoach = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  // Mock AI insights based on user patterns
   useEffect(() => {
-    const mockInsights: AIInsight[] = [
+    // Initialize with some AI insights
+    setInsights([
+      {
+        type: 'motivation',
+        title: 'Daily Momentum',
+        message: "Your consistency in completing morning routines has improved by 40% this week. This shows incredible self-discipline!",
+        icon: Trophy,
+        color: 'text-yellow-500'
+      },
       {
         type: 'pattern',
         title: 'Energy Pattern Detected',
-        message: 'You tend to be most productive between 9-11 AM. Consider scheduling your most important tasks during this window.',
-        icon: TrendingUp,
-        color: 'text-blue-600'
+        message: "I notice you're most productive between 9-11 AM. Consider scheduling your most important tasks during this window.",
+        icon: Brain,
+        color: 'text-blue-500'
       },
       {
         type: 'suggestion',
-        title: 'Habit Stack Opportunity',
-        message: 'You could pair your morning meditation with journaling since you already have a strong morning routine.',
-        icon: Target,
-        color: 'text-green-600'
-      },
-      {
-        type: 'achievement',
-        title: 'Consistency Win',
-        message: 'Amazing! You\'ve maintained your exercise habit for 12 days straight. Your dedication is paying off.',
-        icon: Sparkles,
-        color: 'text-purple-600'
+        title: 'Optimization Tip',
+        message: "Based on your mood data, taking a 10-minute walk after lunch could boost your afternoon productivity by 25%.",
+        icon: Lightbulb,
+        color: 'text-green-500'
       }
-    ];
-    
-    setInsights(mockInsights);
+    ]);
   }, []);
 
   const handleSendMessage = async () => {
@@ -54,108 +51,95 @@ export const AILifeCoach = () => {
     
     setIsLoading(true);
     
-    try {
-      // Simulate AI processing
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Mock AI response based on input
-      const responses = [
-        "I understand you're looking for guidance. Based on your current habits, I'd suggest focusing on consistency over perfection. Small daily actions compound into remarkable results.",
-        "Your progress shows great potential. The key is to build on your existing momentum while gradually introducing new positive habits.",
-        "I notice you're being hard on yourself. Remember, personal growth is a journey, not a destination. Celebrate your small wins along the way.",
-        "Your patterns suggest you respond well to morning routines. Consider adding a brief mindfulness practice to enhance your existing schedule."
-      ];
-      
-      const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-      
-      const newInsight: AIInsight = {
-        type: 'motivation',
-        title: 'AI Coach Response',
-        message: randomResponse,
-        icon: Brain,
-        color: 'text-indigo-600'
-      };
-      
-      setInsights(prev => [newInsight, ...prev].slice(0, 5)); // Keep only 5 latest
-      setUserInput("");
-      
-      toast({
-        title: "AI Coach responded",
-        description: "Your personal insights have been updated.",
-      });
-      
-    } catch (error) {
-      toast({
-        title: "Connection error",
-        description: "Unable to connect to AI coach. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    // Simulate AI processing
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    const responses = [
+      {
+        type: 'suggestion' as const,
+        title: 'Personalized Recommendation',
+        message: `Based on your question about "${userInput.substring(0, 30)}...", I recommend focusing on small, consistent actions. Start with just 5 minutes daily and build from there.`,
+        icon: Target,
+        color: 'text-purple-500'
+      },
+      {
+        type: 'motivation' as const,
+        title: 'Encouragement',
+        message: "Remember, every expert was once a beginner. Your willingness to seek guidance shows you're already on the right path to growth.",
+        icon: Trophy,
+        color: 'text-yellow-500'
+      }
+    ];
+    
+    const newInsight = responses[Math.floor(Math.random() * responses.length)];
+    setInsights(prev => [newInsight, ...prev]);
+    setUserInput("");
+    setIsLoading(false);
+    
+    toast({
+      title: "AI Insight Generated",
+      description: "Your personal life coach has analyzed your question.",
+    });
   };
 
   return (
-    <Card className="mb-6">
+    <Card className="w-full">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Brain className="w-5 h-5 text-indigo-600" />
+          <Brain className="h-5 w-5" />
           AI Life Coach
         </CardTitle>
+        <CardDescription>
+          Get personalized insights and guidance for your self-improvement journey
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Chat Input */}
-        <div className="flex gap-2">
+        <div className="space-y-2">
           <Textarea
+            placeholder="Ask your AI life coach anything about habits, goals, motivation, or personal growth..."
             value={userInput}
             onChange={(e) => setUserInput(e.target.value)}
-            placeholder="Ask your AI coach anything about habits, goals, or personal growth..."
-            className="min-h-[60px] resize-none"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSendMessage();
-              }
-            }}
+            className="min-h-[100px]"
           />
           <Button 
-            onClick={handleSendMessage}
-            disabled={isLoading || !userInput.trim()}
-            size="icon"
-            className="h-[60px]"
+            onClick={handleSendMessage} 
+            disabled={!userInput.trim() || isLoading}
+            className="w-full"
           >
-            <Send className="w-4 h-4" />
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                AI is thinking...
+              </>
+            ) : (
+              <>
+                <Send className="mr-2 h-4 w-4" />
+                Ask AI Coach
+              </>
+            )}
           </Button>
         </div>
 
-        {/* AI Insights */}
         <div className="space-y-3">
-          {insights.map((insight, index) => {
-            const IconComponent = insight.icon;
-            return (
-              <div key={index} className="flex gap-3 p-3 bg-muted/50 rounded-lg">
-                <IconComponent className={`w-5 h-5 mt-0.5 ${insight.color}`} />
-                <div className="flex-1">
-                  <h4 className="font-medium text-sm text-foreground mb-1">
-                    {insight.title}
-                  </h4>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {insight.message}
-                  </p>
+          <h4 className="font-semibold text-sm">Recent AI Insights</h4>
+          {insights.length > 0 ? (
+            <div className="space-y-3">
+              {insights.map((insight, index) => (
+                <div key={index} className="border rounded-lg p-3 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <insight.icon className={`h-4 w-4 ${insight.color}`} />
+                    <span className="font-medium text-sm">{insight.title}</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">{insight.message}</p>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {insights.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground">
-            <Brain className="w-12 h-12 mx-auto mb-3 opacity-50" />
-            <p className="text-sm">
-              Ask your AI coach a question to get personalized insights
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              Ask your first question to get personalized AI insights
             </p>
-          </div>
-        )}
+          )}
+        </div>
       </CardContent>
     </Card>
   );

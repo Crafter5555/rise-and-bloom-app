@@ -1,9 +1,8 @@
-
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Trophy, Star, Flame, Target, Calendar, Clock } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Trophy, Target, Zap, Calendar, Clock, Star } from "lucide-react";
 
 interface Achievement {
   id: string;
@@ -20,177 +19,166 @@ interface Achievement {
 
 export const AchievementSystem = () => {
   const [achievements, setAchievements] = useState<Achievement[]>([]);
-  const [userLevel, setUserLevel] = useState(5);
-  const [userXP, setUserXP] = useState(1250);
-  const [xpToNextLevel, setXpToNextLevel] = useState(1500);
+  const [userLevel, setUserLevel] = useState(12);
+  const [userXP, setUserXP] = useState(2850);
+  const [xpToNextLevel, setXpToNextLevel] = useState(150);
 
   useEffect(() => {
-    const mockAchievements: Achievement[] = [
+    // Mock achievement data
+    setAchievements([
       {
         id: '1',
-        title: 'First Steps',
-        description: 'Complete your first habit',
-        icon: Target,
+        title: 'Early Bird',
+        description: 'Complete 7 morning routines in a row',
+        icon: Calendar,
         category: 'habits',
-        progress: 1,
-        maxProgress: 1,
+        progress: 7,
+        maxProgress: 7,
         unlocked: true,
-        xpReward: 50,
+        xpReward: 100,
         rarity: 'common'
       },
       {
         id: '2',
-        title: 'Week Warrior',
-        description: 'Maintain a 7-day habit streak',
-        icon: Flame,
+        title: 'Streak Master',
+        description: 'Maintain a 30-day habit streak',
+        icon: Zap,
         category: 'streaks',
-        progress: 7,
-        maxProgress: 7,
-        unlocked: true,
-        xpReward: 150,
-        rarity: 'rare'
-      },
-      {
-        id: '3',
-        title: 'Perfect Week',
-        description: 'Complete all habits for 7 days straight',
-        icon: Star,
-        category: 'consistency',
-        progress: 5,
-        maxProgress: 7,
+        progress: 24,
+        maxProgress: 30,
         unlocked: false,
-        xpReward: 300,
+        xpReward: 500,
         rarity: 'epic'
       },
       {
-        id: '4',
-        title: 'Early Bird',
-        description: 'Complete morning routine before 7 AM for 5 days',
-        icon: Clock,
-        category: 'time',
+        id: '3',
+        title: 'Goal Crusher',
+        description: 'Complete 5 goals in a month',
+        icon: Target,
+        category: 'goals',
         progress: 3,
         maxProgress: 5,
         unlocked: false,
-        xpReward: 100,
+        xpReward: 250,
+        rarity: 'rare'
+      },
+      {
+        id: '4',
+        title: 'Time Master',
+        description: 'Log 100 hours of focused work',
+        icon: Clock,
+        category: 'time',
+        progress: 87,
+        maxProgress: 100,
+        unlocked: false,
+        xpReward: 300,
         rarity: 'rare'
       },
       {
         id: '5',
-        title: 'Goal Crusher',
-        description: 'Complete 3 major goals',
-        icon: Trophy,
-        category: 'goals',
-        progress: 1,
-        maxProgress: 3,
+        title: 'Consistency Legend',
+        description: 'Complete daily check-ins for 100 days',
+        icon: Star,
+        category: 'consistency',
+        progress: 45,
+        maxProgress: 100,
         unlocked: false,
-        xpReward: 500,
+        xpReward: 1000,
         rarity: 'legendary'
       }
-    ];
-
-    setAchievements(mockAchievements);
+    ]);
   }, []);
 
   const getRarityColor = (rarity: Achievement['rarity']) => {
-    const colors = {
-      common: 'bg-gray-100 text-gray-800 border-gray-300',
-      rare: 'bg-blue-100 text-blue-800 border-blue-300',
-      epic: 'bg-purple-100 text-purple-800 border-purple-300',
-      legendary: 'bg-yellow-100 text-yellow-800 border-yellow-300'
-    };
-    return colors[rarity];
+    switch (rarity) {
+      case 'common': return 'bg-gray-100 text-gray-800';
+      case 'rare': return 'bg-blue-100 text-blue-800';
+      case 'epic': return 'bg-purple-100 text-purple-800';
+      case 'legendary': return 'bg-yellow-100 text-yellow-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
   };
 
   const getCategoryIcon = (category: Achievement['category']) => {
-    const icons = {
-      habits: Target,
-      streaks: Flame,
-      goals: Trophy,
-      consistency: Star,
-      time: Clock
-    };
-    return icons[category];
+    switch (category) {
+      case 'habits': return Calendar;
+      case 'streaks': return Zap;
+      case 'goals': return Target;
+      case 'consistency': return Star;
+      case 'time': return Clock;
+      default: return Trophy;
+    }
   };
 
-  const progressPercentage = (userXP / xpToNextLevel) * 100;
-
   return (
-    <Card className="mb-6">
+    <Card className="w-full">
       <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <span className="flex items-center gap-2">
-            <Trophy className="w-5 h-5 text-yellow-600" />
-            Achievements & Progress
-          </span>
-          <div className="text-right">
-            <div className="text-sm font-medium">Level {userLevel}</div>
-            <div className="text-xs text-muted-foreground">{userXP} / {xpToNextLevel} XP</div>
-          </div>
+        <CardTitle className="flex items-center gap-2">
+          <Trophy className="h-5 w-5" />
+          Achievement System
         </CardTitle>
-        <Progress value={progressPercentage} className="w-full" />
+        <CardDescription>
+          Track your progress and unlock achievements as you grow
+        </CardDescription>
       </CardHeader>
-      <CardContent>
-        <div className="grid gap-3">
-          {achievements.map((achievement) => {
-            const IconComponent = achievement.icon;
-            const progressPercent = (achievement.progress / achievement.maxProgress) * 100;
-            
-            return (
-              <div 
-                key={achievement.id}
-                className={`p-3 rounded-lg border-2 transition-all ${
-                  achievement.unlocked 
-                    ? 'bg-green-50 border-green-200' 
-                    : 'bg-muted/50 border-muted'
-                }`}
-              >
-                <div className="flex items-start gap-3">
-                  <div className={`p-2 rounded-lg ${
-                    achievement.unlocked ? 'bg-green-100' : 'bg-muted'
-                  }`}>
-                    <IconComponent className={`w-5 h-5 ${
-                      achievement.unlocked ? 'text-green-600' : 'text-muted-foreground'
-                    }`} />
-                  </div>
-                  
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-1">
-                      <h4 className={`font-medium text-sm ${
-                        achievement.unlocked ? 'text-foreground' : 'text-muted-foreground'
-                      }`}>
-                        {achievement.title}
-                      </h4>
-                      <div className="flex items-center gap-2">
-                        <Badge 
-                          variant="outline" 
-                          className={`text-xs ${getRarityColor(achievement.rarity)}`}
-                        >
-                          {achievement.rarity}
-                        </Badge>
-                        <span className="text-xs font-medium text-yellow-600">
-                          +{achievement.xpReward} XP
-                        </span>
+      <CardContent className="space-y-6">
+        {/* User Level Progress */}
+        <div className="space-y-2">
+          <div className="flex justify-between items-center">
+            <span className="font-semibold">Level {userLevel}</span>
+            <span className="text-sm text-muted-foreground">{userXP} XP</span>
+          </div>
+          <Progress value={(xpToNextLevel - (xpToNextLevel - userXP % 100)) / xpToNextLevel * 100} />
+          <p className="text-sm text-muted-foreground">{xpToNextLevel} XP to next level</p>
+        </div>
+
+        {/* Achievements Grid */}
+        <div className="space-y-3">
+          <h4 className="font-semibold">Your Achievements</h4>
+          <div className="grid gap-3">
+            {achievements.map((achievement) => {
+              const CategoryIcon = getCategoryIcon(achievement.category);
+              const progressPercentage = (achievement.progress / achievement.maxProgress) * 100;
+              
+              return (
+                <div 
+                  key={achievement.id}
+                  className={`border rounded-lg p-4 space-y-3 ${
+                    achievement.unlocked ? 'bg-green-50 border-green-200' : 'bg-gray-50'
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-lg ${achievement.unlocked ? 'bg-green-100' : 'bg-gray-200'}`}>
+                        <CategoryIcon className={`h-4 w-4 ${achievement.unlocked ? 'text-green-600' : 'text-gray-400'}`} />
+                      </div>
+                      <div>
+                        <h5 className="font-medium">{achievement.title}</h5>
+                        <p className="text-sm text-muted-foreground">{achievement.description}</p>
                       </div>
                     </div>
-                    
-                    <p className="text-xs text-muted-foreground mb-2">
-                      {achievement.description}
-                    </p>
-                    
-                    <div className="flex items-center gap-2">
-                      <Progress 
-                        value={progressPercent} 
-                        className="flex-1 h-2"
-                      />
-                      <span className="text-xs text-muted-foreground">
-                        {achievement.progress}/{achievement.maxProgress}
-                      </span>
+                    <Badge className={getRarityColor(achievement.rarity)}>
+                      {achievement.rarity}
+                    </Badge>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Progress</span>
+                      <span>{achievement.progress}/{achievement.maxProgress}</span>
                     </div>
+                    <Progress value={progressPercentage} />
+                    {achievement.unlocked && (
+                      <div className="flex items-center gap-2 text-sm text-green-600">
+                        <Trophy className="h-3 w-3" />
+                        <span>+{achievement.xpReward} XP earned</span>
+                      </div>
+                    )}
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       </CardContent>
     </Card>
