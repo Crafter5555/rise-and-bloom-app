@@ -24,10 +24,22 @@ interface AccountabilityPartner {
   status: 'online' | 'offline';
 }
 
+interface CommunityPost {
+  id: string;
+  author: string;
+  avatar: string;
+  content: string;
+  likes: number;
+  comments: number;
+  timeAgo: string;
+  achievement?: string;
+}
+
 export const CommunityFeatures = () => {
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [partners, setPartners] = useState<AccountabilityPartner[]>([]);
-  const [activeTab, setActiveTab] = useState<'challenges' | 'partners'>('challenges');
+  const [posts, setPosts] = useState<CommunityPost[]>([]);
+  const [activeTab, setActiveTab] = useState<'challenges' | 'partners' | 'feed'>('challenges');
 
   useEffect(() => {
     // Mock community data

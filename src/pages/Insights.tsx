@@ -8,7 +8,8 @@ import { PerformanceOptimizer } from "@/components/performance/PerformanceOptimi
 import { AILifeCoach } from "@/components/ai/AILifeCoach";
 import { SmartInsights } from "@/components/ai/SmartInsights";
 import { AchievementSystem } from "@/components/gamification/AchievementSystem";
-import { Brain, TrendingUp, BookOpen, Zap, Trophy, Sparkles } from "lucide-react";
+import { SmartScheduler } from "@/components/scheduling/SmartScheduler";
+import { Brain, TrendingUp, BookOpen, Zap, Trophy, Sparkles, Calendar } from "lucide-react";
 
 const Insights = () => {
   return (
@@ -20,14 +21,18 @@ const Insights = () => {
       
       <div className="flex-1 overflow-auto px-4 pb-20">
         <Tabs defaultValue="ai-coach" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="ai-coach" className="text-xs">
               <Brain className="w-4 h-4 mr-1" />
-              AI Coach
+              Coach
             </TabsTrigger>
             <TabsTrigger value="insights" className="text-xs">
               <Sparkles className="w-4 h-4 mr-1" />
               Smart
+            </TabsTrigger>
+            <TabsTrigger value="scheduler" className="text-xs">
+              <Calendar className="w-4 h-4 mr-1" />
+              Schedule
             </TabsTrigger>
             <TabsTrigger value="achievements" className="text-xs">
               <Trophy className="w-4 h-4 mr-1" />
@@ -53,6 +58,10 @@ const Insights = () => {
 
           <TabsContent value="insights" className="space-y-4">
             <SmartInsights />
+          </TabsContent>
+
+          <TabsContent value="scheduler" className="space-y-4">
+            <SmartScheduler />
           </TabsContent>
 
           <TabsContent value="achievements" className="space-y-4">
