@@ -1,87 +1,15 @@
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { TrendingUp, Brain, Zap, Target, AlertCircle, CheckCircle } from "lucide-react";
-
-interface SmartInsight {
-  id: string;
-  type: 'pattern' | 'recommendation' | 'warning' | 'celebration';
-  title: string;
-  description: string;
-  confidence: number;
-  actionable: boolean;
-  category: 'productivity' | 'wellness' | 'habits' | 'goals';
-  icon: any;
-  priority: 'low' | 'medium' | 'high';
-}
+import React, { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Lightbulb, TrendingUp, AlertTriangle, Trophy, Filter, Loader2, Brain } from 'lucide-react';
+import { useRealInsights } from '@/hooks/useRealInsights';
 
 export const SmartInsights = () => {
-  const [insights, setInsights] = useState<SmartInsight[]>([]);
+  const { insights, isLoading, generateInsights, isGenerating } = useRealInsights();
   const [filter, setFilter] = useState<'all' | 'actionable'>('all');
 
-  useEffect(() => {
-    // Generate smart insights based on user data patterns
-    setInsights([
-      {
-        id: '1',
-        type: 'pattern',
-        title: 'Peak Performance Window Identified',
-        description: 'Your productivity peaks between 9-11 AM with 85% task completion rate. Consider scheduling important work during this time.',
-        confidence: 92,
-        actionable: true,
-        category: 'productivity',
-        icon: TrendingUp,
-        priority: 'high'
-      },
-      {
-        id: '2',
-        type: 'recommendation',
-        title: 'Sleep-Mood Correlation',
-        description: 'Getting 7.5+ hours of sleep correlates with 40% higher mood ratings. Your optimal bedtime appears to be 10:30 PM.',
-        confidence: 87,
-        actionable: true,
-        category: 'wellness',
-        icon: Brain,
-        priority: 'high'
-      },
-      {
-        id: '3',
-        type: 'warning',
-        title: 'Habit Streak at Risk',
-        description: 'Your meditation streak of 12 days might be broken. You typically struggle on Fridays - consider setting a reminder.',
-        confidence: 78,
-        actionable: true,
-        category: 'habits',
-        icon: AlertCircle,
-        priority: 'medium'
-      },
-      {
-        id: '4',
-        type: 'celebration',
-        title: 'Consistency Achievement',
-        description: 'You\'ve maintained 90%+ goal completion for 3 weeks straight - your best performance yet!',
-        confidence: 100,
-        actionable: false,
-        category: 'goals',
-        icon: CheckCircle,
-        priority: 'low'
-      },
-      {
-        id: '5',
-        type: 'pattern',
-        title: 'Exercise Energy Boost',
-        description: 'Morning workouts increase your energy levels by 35% throughout the day compared to evening sessions.',
-        confidence: 83,
-        actionable: true,
-        category: 'wellness',
-        icon: Zap,
-        priority: 'medium'
-      }
-    ]);
-  }, []);
-
-  const getTypeColor = (type: SmartInsight['type']) => {
+  const getTypeColor = (type: string) => {
     switch (type) {
       case 'pattern': return 'bg-blue-100 text-blue-800';
       case 'recommendation': return 'bg-green-100 text-green-800';
@@ -91,7 +19,7 @@ export const SmartInsights = () => {
     }
   };
 
-  const getPriorityColor = (priority: SmartInsight['priority']) => {
+  const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'high': return 'border-red-200 bg-red-50';
       case 'medium': return 'border-yellow-200 bg-yellow-50';
@@ -100,9 +28,19 @@ export const SmartInsights = () => {
     }
   };
 
-  const filteredInsights = filter === 'actionable' 
-    ? insights.filter(insight => insight.actionable)
-    : insights;
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case 'pattern': return TrendingUp;
+      case 'recommendation': return Lightbulb;
+      case 'warning': return AlertTriangle;
+      case 'celebration': return Trophy;
+      default: return Brain;
+    }
+  };
+
+  const filteredInsights = insights.filter(insight => 
+    filter === 'all' || insight.actionable
+  );
 
   return (
     <Card className="w-full">
@@ -114,59 +52,88 @@ export const SmartInsights = () => {
         <CardDescription>
           AI-powered insights based on your behavior patterns and data
         </CardDescription>
-        <div className="flex gap-2">
-          <Button 
-            variant={filter === 'all' ? 'default' : 'outline'} 
-            size="sm"
-            onClick={() => setFilter('all')}
-          >
-            All Insights
-          </Button>
-          <Button 
-            variant={filter === 'actionable' ? 'default' : 'outline'} 
-            size="sm"
-            onClick={() => setFilter('actionable')}
-          >
-            Actionable Only
-          </Button>
+        <div className="flex items-center justify-between">
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => generateInsights()}
+              disabled={isGenerating}
+            >
+              {isGenerating ? (
+                <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+              ) : (
+                <Lightbulb className="w-4 h-4 mr-1" />
+              )}
+              Generate
+            </Button>
+            <Button
+              variant={filter === 'all' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setFilter('all')}
+            >
+              All
+            </Button>
+            <Button
+              variant={filter === 'actionable' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setFilter('actionable')}
+            >
+              <Filter className="w-4 h-4 mr-1" />
+              Actionable
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {filteredInsights.map((insight) => (
-          <div 
-            key={insight.id}
-            className={`border rounded-lg p-4 space-y-3 ${getPriorityColor(insight.priority)}`}
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <insight.icon className="h-5 w-5 text-primary" />
-                <div>
-                  <h4 className="font-semibold">{insight.title}</h4>
-                  <p className="text-sm text-muted-foreground mt-1">{insight.description}</p>
-                </div>
-              </div>
-              <div className="flex flex-col items-end gap-2">
-                <Badge className={getTypeColor(insight.type)}>
-                  {insight.type}
-                </Badge>
-                <span className="text-xs text-muted-foreground">
-                  {insight.confidence}% confidence
-                </span>
-              </div>
-            </div>
-            
-            {insight.actionable && (
-              <div className="flex gap-2">
-                <Button size="sm" variant="outline">
-                  Apply Suggestion
-                </Button>
-                <Button size="sm" variant="ghost">
-                  Dismiss
-                </Button>
-              </div>
-            )}
+        {isLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-6 h-6 animate-spin" />
           </div>
-        ))}
+        ) : filteredInsights.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            No insights available. Click "Generate" to analyze your data.
+          </div>
+        ) : (
+          filteredInsights.map((insight) => {
+            const IconComponent = getTypeIcon(insight.insight_type);
+            return (
+              <div 
+                key={insight.id}
+                className={`border rounded-lg p-4 space-y-3 ${getPriorityColor(insight.priority)}`}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <IconComponent className="h-5 w-5 text-primary" />
+                    <div>
+                      <h4 className="font-semibold">{insight.title}</h4>
+                      <p className="text-sm text-muted-foreground mt-1">{insight.description}</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end gap-2">
+                    <Badge className={getTypeColor(insight.insight_type)}>
+                      {insight.insight_type}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">
+                      {Math.round(insight.confidence * 100)}% confidence
+                    </span>
+                  </div>
+                </div>
+                
+                {insight.actionable && (
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline">
+                      Apply Suggestion
+                    </Button>
+                    <Button size="sm" variant="ghost">
+                      Dismiss
+                    </Button>
+                  </div>
+                )}
+              </div>
+            );
+          })
+        )}
       </CardContent>
     </Card>
   );

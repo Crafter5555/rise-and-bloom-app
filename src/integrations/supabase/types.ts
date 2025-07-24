@@ -118,6 +118,51 @@ export type Database = {
           },
         ]
       }
+      behavior_insights: {
+        Row: {
+          actionable: boolean | null
+          category: string | null
+          confidence: number | null
+          created_at: string
+          data_points: Json | null
+          description: string
+          expires_at: string | null
+          id: string
+          insight_type: string
+          priority: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          actionable?: boolean | null
+          category?: string | null
+          confidence?: number | null
+          created_at?: string
+          data_points?: Json | null
+          description: string
+          expires_at?: string | null
+          id?: string
+          insight_type: string
+          priority?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          actionable?: boolean | null
+          category?: string | null
+          confidence?: number | null
+          created_at?: string
+          data_points?: Json | null
+          description?: string
+          expires_at?: string | null
+          id?: string
+          insight_type?: string
+          priority?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       daily_device_stats: {
         Row: {
           created_at: string
@@ -403,6 +448,39 @@ export type Database = {
         }
         Relationships: []
       }
+      mood_entries: {
+        Row: {
+          created_at: string
+          energy_level: number | null
+          entry_date: string
+          id: string
+          mood_score: number
+          notes: string | null
+          sleep_hours: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          energy_level?: number | null
+          entry_date?: string
+          id?: string
+          mood_score: number
+          notes?: string | null
+          sleep_hours?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          energy_level?: number | null
+          entry_date?: string
+          id?: string
+          mood_score?: number
+          notes?: string | null
+          sleep_hours?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -509,6 +587,75 @@ export type Database = {
           id?: string
           priority?: string | null
           title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_achievements: {
+        Row: {
+          achievement_id: string
+          created_at: string
+          id: string
+          max_progress: number | null
+          progress: number | null
+          unlocked_at: string
+          user_id: string
+          xp_earned: number | null
+        }
+        Insert: {
+          achievement_id: string
+          created_at?: string
+          id?: string
+          max_progress?: number | null
+          progress?: number | null
+          unlocked_at?: string
+          user_id: string
+          xp_earned?: number | null
+        }
+        Update: {
+          achievement_id?: string
+          created_at?: string
+          id?: string
+          max_progress?: number | null
+          progress?: number | null
+          unlocked_at?: string
+          user_id?: string
+          xp_earned?: number | null
+        }
+        Relationships: []
+      }
+      user_progress: {
+        Row: {
+          created_at: string
+          current_streak: number | null
+          focus_score: number | null
+          id: string
+          level: number | null
+          longest_streak: number | null
+          total_xp: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_streak?: number | null
+          focus_score?: number | null
+          id?: string
+          level?: number | null
+          longest_streak?: number | null
+          total_xp?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_streak?: number | null
+          focus_score?: number | null
+          id?: string
+          level?: number | null
+          longest_streak?: number | null
+          total_xp?: number | null
           updated_at?: string
           user_id?: string
         }
@@ -676,6 +823,10 @@ export type Database = {
         }
         Returns: Json
       }
+      generate_behavior_insights: {
+        Args: { target_user_id: string }
+        Returns: number
+      }
       generate_daily_activity_plans: {
         Args: {
           target_user_id: string
@@ -707,6 +858,10 @@ export type Database = {
           days_ahead?: number
         }
         Returns: number
+      }
+      update_user_progress: {
+        Args: { target_user_id: string }
+        Returns: undefined
       }
     }
     Enums: {
