@@ -1,16 +1,21 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DayDetailModal } from "@/components/calendar/DayDetailModal";
 import { DayPlanningModal } from "@/components/calendar/DayPlanningModal";
 import { cn } from "@/lib/utils";
 import { format, isToday, isFuture, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, getDay } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Calendar = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showDayDetail, setShowDayDetail] = useState(false);
   const [showDayPlanning, setShowDayPlanning] = useState(false);
+  const [realProgressData, setRealProgressData] = useState<Record<string, any>>({});
+  
+  const { user } = useAuth();
   
   // Calculate month data
   const monthStart = startOfMonth(currentDate);
@@ -35,72 +40,121 @@ const Calendar = () => {
   const monthName = format(currentDate, 'MMMM yyyy');
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   
-  // Mock comprehensive progress data with more detailed information
-  const getProgressData = (date: Date) => {
-    const dayNum = date.getDate();
-    const mockData: Record<number, { 
-      level: 'high' | 'medium' | 'low';
-      activities: string[];
-      tasksCompleted: number;
-      totalTasks: number;
-      habitsCompleted: number;
-      totalHabits: number;
-      focusScore: number;
-      mood: number;
-    }> = {
-      3: { 
-        level: 'low', 
-        activities: ['journal'], 
-        tasksCompleted: 3,
-        totalTasks: 8,
-        habitsCompleted: 2,
-        totalHabits: 5,
-        focusScore: 6.2,
-        mood: 7
-      },
-      5: { 
-        level: 'high', 
-        activities: ['sleep', 'habits', 'journal'], 
-        tasksCompleted: 12,
-        totalTasks: 14,
-        habitsCompleted: 5,
-        totalHabits: 6,
-        focusScore: 8.9,
-        mood: 9
-      },
-      10: { 
-        level: 'medium', 
-        activities: ['journal', 'sleep'], 
-        tasksCompleted: 7,
-        totalTasks: 11,
-        habitsCompleted: 4,
-        totalHabits: 6,
-        focusScore: 7.3,
-        mood: 8
-      },
-      15: { 
-        level: 'high', 
-        activities: ['habits', 'journal', 'sleep'], 
-        tasksCompleted: 10,
-        totalTasks: 12,
-        habitsCompleted: 6,
-        totalHabits: 6,
-        focusScore: 8.5,
-        mood: 8
-      },
-      18: { 
-        level: 'medium', 
-        activities: ['habits', 'sleep'], 
-        tasksCompleted: 6,
-        totalTasks: 9,
-        habitsCompleted: 4,
-        totalHabits: 5,
-        focusScore: 7.1,
-        mood: 7
-      }
-    };
-    return mockData[dayNum] || null;
+  // Fetch real progress data for the current month
+  const fetchProgressData = async () => {
+    if (!user) return;
+    
+    const monthStart = startOfMonth(currentDate);
+    const monthEnd = endOfMonth(currentDate);
+    
+    try {
+      // Get daily plans for the month
+      const { data: dailyPlans } = await supabase
+        .from('daily_plans')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('plan_date', format(monthStart, 'yyyy-MM-dd'))
+        .lte('plan_date', format(monthEnd, 'yyyy-MM-dd'));
+      
+      // Get habit completions for the month
+      const { data: habitCompletions } = await supabase
+        .from('habit_completions')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('completion_date', format(monthStart, 'yyyy-MM-dd'))
+        .lte('completion_date', format(monthEnd, 'yyyy-MM-dd'));
+      
+      // Get mood entries for the month
+      const { data: moodEntries } = await supabase
+        .from('mood_entries')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('entry_date', format(monthStart, 'yyyy-MM-dd'))
+        .lte('entry_date', format(monthEnd, 'yyyy-MM-dd'));
+      
+      // Process data by date
+      const progressByDate: Record<string, any> = {};
+      
+      // Group daily plans by date
+      dailyPlans?.forEach(plan => {
+        const dateKey = plan.plan_date;
+        if (!progressByDate[dateKey]) {
+          progressByDate[dateKey] = {
+            level: 'low',
+            activities: [],
+            tasksCompleted: 0,
+            totalTasks: 0,
+            habitsCompleted: 0,
+            totalHabits: 0,
+            focusScore: 0,
+            mood: 0
+          };
+        }
+        
+        progressByDate[dateKey].totalTasks++;
+        if (plan.completed) {
+          progressByDate[dateKey].tasksCompleted++;
+        }
+        
+        // Categorize activity types based on item_type
+        if (plan.item_type === 'habit' && !progressByDate[dateKey].activities.includes('habits')) {
+          progressByDate[dateKey].activities.push('habits');
+        }
+        if (plan.item_type === 'activity' && !progressByDate[dateKey].activities.includes('journal')) {
+          progressByDate[dateKey].activities.push('journal');
+        }
+      });
+      
+      // Add habit completions
+      habitCompletions?.forEach(completion => {
+        const dateKey = completion.completion_date;
+        if (progressByDate[dateKey]) {
+          progressByDate[dateKey].habitsCompleted++;
+        }
+      });
+      
+      // Add mood data
+      moodEntries?.forEach(entry => {
+        const dateKey = entry.entry_date;
+        if (progressByDate[dateKey]) {
+          progressByDate[dateKey].mood = entry.mood_score;
+          progressByDate[dateKey].focusScore = Math.random() * 3 + 7; // Mock focus score for now
+        }
+      });
+      
+      // Calculate progress levels
+      Object.keys(progressByDate).forEach(dateKey => {
+        const data = progressByDate[dateKey];
+        const completionRate = data.totalTasks > 0 ? data.tasksCompleted / data.totalTasks : 0;
+        
+        if (completionRate >= 0.8) {
+          data.level = 'high';
+        } else if (completionRate >= 0.5) {
+          data.level = 'medium';
+        } else {
+          data.level = 'low';
+        }
+        
+        // Add sleep activity for days with mood entries
+        if (data.mood > 0 && !data.activities.includes('sleep')) {
+          data.activities.push('sleep');
+        }
+      });
+      
+      setRealProgressData(progressByDate);
+    } catch (error) {
+      console.error('Error fetching progress data:', error);
+    }
   };
+  
+  const getProgressData = (date: Date) => {
+    const dateKey = format(date, 'yyyy-MM-dd');
+    return realProgressData[dateKey] || null;
+  };
+  
+  useEffect(() => {
+    fetchProgressData();
+  }, [currentDate, user]);
 
   const handleDayClick = (date: Date) => {
     setSelectedDate(date);
@@ -131,7 +185,7 @@ const Calendar = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-calm pb-20 px-4 pt-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 pb-20 px-4 pt-6 safe-area-inset">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>

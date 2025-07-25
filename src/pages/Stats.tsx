@@ -39,7 +39,7 @@ const Stats = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-calm pb-20 px-4 pt-6 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 pb-20 px-4 pt-6 safe-area-inset flex items-center justify-center">
         <div className="flex items-center gap-2">
           <Loader2 className="w-6 h-6 animate-spin" />
           <span>Loading your statistics...</span>
@@ -50,7 +50,7 @@ const Stats = () => {
 
   if (error || !stats) {
     return (
-      <div className="min-h-screen bg-gradient-calm pb-20 px-4 pt-6 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 pb-20 px-4 pt-6 safe-area-inset flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-xl font-semibold mb-2">Unable to load statistics</h2>
           <p className="text-muted-foreground">Please try again later</p>
@@ -120,7 +120,7 @@ const Stats = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-calm pb-20 px-4 pt-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 pb-20 px-4 pt-6 safe-area-inset">
       {/* Enhanced Header */}
       <div className="flex items-center justify-between mb-6">
         <div>

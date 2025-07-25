@@ -16,6 +16,7 @@ import { hasCompletedMorningQuiz, hasCompletedEveningQuiz } from "@/utils/quizSt
 import { SyncStatus } from "@/components/mobile/SyncStatus";
 import { useMobileOptimizations } from "@/components/mobile/MobileOptimizations";
 import { Card, CardContent } from "@/components/ui/card";
+import { useRealStats } from "@/hooks/useRealStats";
 
 const Today = () => {
   const [addToPlanOpen, setAddToPlanOpen] = useState(false);
@@ -35,6 +36,7 @@ const Today = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const { triggerHaptic, handleMobileClick } = useMobileOptimizations();
+  const { stats } = useRealStats();
   const currentDate = new Date();
   const dayName = currentDate.toLocaleDateString('en-US', { weekday: 'long' });
   const monthDay = currentDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
@@ -169,21 +171,21 @@ const Today = () => {
           <Card className="p-3 text-center">
             <div className="flex flex-col items-center">
               <Target className="w-5 h-5 text-primary mb-1" />
-              <span className="text-lg font-bold text-foreground">7</span>
+              <span className="text-lg font-bold text-foreground">{stats?.habits.total || 0}</span>
               <span className="text-xs text-muted-foreground">Habits</span>
             </div>
           </Card>
           <Card className="p-3 text-center">
             <div className="flex flex-col items-center">
               <Activity className="w-5 h-5 text-green-600 mb-1" />
-              <span className="text-lg font-bold text-foreground">85%</span>
+              <span className="text-lg font-bold text-foreground">{stats?.today.completionRate || 0}%</span>
               <span className="text-xs text-muted-foreground">Complete</span>
             </div>
           </Card>
           <Card className="p-3 text-center">
             <div className="flex flex-col items-center">
               <Brain className="w-5 h-5 text-purple-600 mb-1" />
-              <span className="text-lg font-bold text-foreground">12</span>
+              <span className="text-lg font-bold text-foreground">{stats?.overview.currentStreak || 0}</span>
               <span className="text-xs text-muted-foreground">Streak</span>
             </div>
           </Card>

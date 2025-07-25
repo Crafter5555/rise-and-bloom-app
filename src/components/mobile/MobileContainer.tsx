@@ -19,7 +19,7 @@ export const MobileContainer = ({
   return (
     <div 
       className={cn(
-        "min-h-screen bg-background",
+        "min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 safe-area-inset",
         withHeader && "pt-safe-area",
         withBottomNav && !isKeyboardOpen && "pb-20",
         className
