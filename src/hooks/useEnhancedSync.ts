@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -17,6 +16,8 @@ interface PendingAction {
 export const useEnhancedSync = () => {
   const [pendingActions, setPendingActions] = useState<PendingAction[]>([]);
   const [syncStatus, setSyncStatus] = useState<'synced' | 'pending' | 'syncing'>('synced');
+  const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
+  const [syncErrors, setSyncErrors] = useState<string[]>([]);
   const { user } = useAuth();
   const { isOnline } = useOfflineStatus();
   const { toast } = useToast();
@@ -32,6 +33,12 @@ export const useEnhancedSync = () => {
           setSyncStatus('pending');
         }
       }
+      
+      // Load last sync time
+      const lastSync = localStorage.getItem('lastSyncTime');
+      if (lastSync) {
+        setLastSyncTime(new Date(lastSync));
+      }
     } catch (error) {
       console.error('Error loading pending actions:', error);
     }
@@ -42,6 +49,13 @@ export const useEnhancedSync = () => {
     try {
       localStorage.setItem('pendingActions', JSON.stringify(actions));
       setSyncStatus(actions.length > 0 ? 'pending' : 'synced');
+      
+      // Update last sync time if no pending actions
+      if (actions.length === 0) {
+        const now = new Date();
+        setLastSyncTime(now);
+        localStorage.setItem('lastSyncTime', now.toISOString());
+      }
     } catch (error) {
       console.error('Error saving pending actions:', error);
     }
@@ -69,7 +83,7 @@ export const useEnhancedSync = () => {
 
     // Try to sync immediately if online
     if (isOnline) {
-      syncPendingActions();
+      setTimeout(() => syncPendingActions(), 100); // Small delay to batch operations
     }
 
     return pendingAction.id;
@@ -80,7 +94,9 @@ export const useEnhancedSync = () => {
     if (!isOnline || !user || pendingActions.length === 0) return;
 
     setSyncStatus('syncing');
+    setSyncErrors([]);
     const failedActions: PendingAction[] = [];
+    const errors: string[] = [];
 
     for (const action of pendingActions) {
       try {
@@ -109,10 +125,12 @@ export const useEnhancedSync = () => {
 
         if (result?.error) {
           console.error(`Sync error for ${action.type}:`, result.error);
+          errors.push(`${action.type}: ${result.error.message}`);
           failedActions.push(action);
         }
       } catch (error) {
         console.error(`Sync error for ${action.type}:`, error);
+        errors.push(`${action.type}: ${error instanceof Error ? error.message : 'Unknown error'}`);
         failedActions.push(action);
       }
     }
@@ -120,6 +138,7 @@ export const useEnhancedSync = () => {
     // Update pending actions with only failed ones
     setPendingActions(failedActions);
     savePendingActions(failedActions);
+    setSyncErrors(errors);
 
     if (failedActions.length === 0) {
       toast({
@@ -131,8 +150,32 @@ export const useEnhancedSync = () => {
         title: "Partially Synced",
         description: `${pendingActions.length - failedActions.length} changes synced, ${failedActions.length} pending`
       });
+    } else {
+      toast({
+        title: "Sync Failed",
+        description: `Failed to sync ${failedActions.length} changes. Will retry when online.`,
+        variant: "destructive"
+      });
     }
   }, [isOnline, user, pendingActions, savePendingActions, toast]);
+
+  // Retry failed syncs
+  const retrySync = useCallback(async () => {
+    if (pendingActions.length > 0) {
+      await syncPendingActions();
+    }
+  }, [pendingActions, syncPendingActions]);
+
+  // Clear all pending actions (emergency reset)
+  const clearPendingActions = useCallback(() => {
+    setPendingActions([]);
+    savePendingActions([]);
+    setSyncErrors([]);
+    toast({
+      title: "Pending Actions Cleared",
+      description: "All pending sync actions have been cleared."
+    });
+  }, [savePendingActions, toast]);
 
   // Helper functions for common actions
   const syncHabitCompletion = useCallback((habitId: string, completionDate: string) => {
@@ -175,6 +218,19 @@ export const useEnhancedSync = () => {
     }
   }, [isOnline, pendingActions.length, syncPendingActions]);
 
+  // Periodic sync attempt (every 5 minutes when online)
+  useEffect(() => {
+    if (!isOnline || pendingActions.length === 0) return;
+
+    const interval = setInterval(() => {
+      if (pendingActions.length > 0) {
+        syncPendingActions();
+      }
+    }, 5 * 60 * 1000); // 5 minutes
+
+    return () => clearInterval(interval);
+  }, [isOnline, pendingActions.length, syncPendingActions]);
+
   // Load pending actions on mount
   useEffect(() => {
     loadPendingActions();
@@ -183,7 +239,11 @@ export const useEnhancedSync = () => {
   return {
     syncStatus,
     pendingActionsCount: pendingActions.length,
+    lastSyncTime,
+    syncErrors,
     syncPendingActions,
+    retrySync,
+    clearPendingActions,
     syncHabitCompletion,
     syncTaskUpdate,
     syncDailyPlanUpdate,

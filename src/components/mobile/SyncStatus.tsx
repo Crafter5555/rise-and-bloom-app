@@ -4,17 +4,20 @@ import { RefreshCw, Wifi, WifiOff, Cloud, CloudOff } from "lucide-react";
 import { useOfflineStatus } from "@/utils/offline";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useEnhancedSync } from "@/hooks/useEnhancedSync";
 import { cn } from "@/lib/utils";
 
 export const SyncStatus = () => {
-  const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
-  const [isSyncing, setIsSyncing] = useState(false);
   const { isOnline } = useOfflineStatus();
   const { user } = useAuth();
-
-  const updateSyncTime = () => {
-    setLastSyncTime(new Date());
-  };
+  const { 
+    syncStatus, 
+    pendingActionsCount, 
+    lastSyncTime, 
+    syncErrors, 
+    retrySync 
+  } = useEnhancedSync();
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const formatSyncTime = (time: Date) => {
     const now = new Date();
@@ -29,43 +32,10 @@ export const SyncStatus = () => {
     return "1+ days ago";
   };
 
-  // Listen for Supabase real-time events to update sync status
-  useEffect(() => {
-    if (!user) return;
-
-    const channel = supabase
-      .channel('sync-status')
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public',
-        filter: `user_id=eq.${user.id}`
-      }, () => {
-        updateSyncTime();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user]);
-
-  // Update sync time on initial load and when coming online
-  useEffect(() => {
-    if (isOnline && user) {
-      updateSyncTime();
-    }
-  }, [isOnline, user]);
-
   const handleRefresh = async () => {
     setIsSyncing(true);
-    // Trigger a small data fetch to update sync time
     try {
-      await supabase
-        .from('daily_plans')
-        .select('id')
-        .eq('user_id', user?.id)
-        .limit(1);
-      updateSyncTime();
+      await retrySync();
     } catch (error) {
       console.error('Sync refresh failed:', error);
     } finally {
@@ -73,6 +43,21 @@ export const SyncStatus = () => {
     }
   };
 
+  const getSyncStatusColor = () => {
+    if (!isOnline) return "text-red-600";
+    if (syncStatus === 'syncing') return "text-blue-600";
+    if (syncStatus === 'pending') return "text-yellow-600";
+    if (syncErrors.length > 0) return "text-orange-600";
+    return "text-green-600";
+  };
+
+  const getSyncStatusText = () => {
+    if (!isOnline) return "Offline";
+    if (syncStatus === 'syncing') return "Syncing...";
+    if (syncStatus === 'pending') return `${pendingActionsCount} pending`;
+    if (syncErrors.length > 0) return "Sync errors";
+    return lastSyncTime ? `Synced ${formatSyncTime(lastSyncTime)}` : "Synced";
+  };
   if (!user) return null;
 
   return (
@@ -89,9 +74,11 @@ export const SyncStatus = () => {
         variant="outline" 
         className={cn(
           "text-xs px-2 py-0 cursor-pointer transition-colors",
-          isOnline ? "hover:bg-green-50" : "bg-yellow-50 text-yellow-700"
+          isOnline ? "hover:bg-green-50" : "bg-yellow-50 text-yellow-700",
+          syncErrors.length > 0 && "bg-orange-50 text-orange-700"
         )}
         onClick={handleRefresh}
+        title={syncErrors.length > 0 ? `Sync errors: ${syncErrors.join(', ')}` : undefined}
       >
         <div className="flex items-center gap-1">
           {isOnline ? (
@@ -100,11 +87,7 @@ export const SyncStatus = () => {
             <CloudOff className="w-3 h-3" />
           )}
           <RefreshCw className={cn("w-3 h-3", isSyncing && "animate-spin")} />
-          {lastSyncTime ? (
-            <span>Synced {formatSyncTime(lastSyncTime)}</span>
-          ) : (
-            <span>{isOnline ? "Syncing..." : "Offline"}</span>
-          )}
+          <span className={getSyncStatusColor()}>{getSyncStatusText()}</span>
         </div>
       </Badge>
     </div>

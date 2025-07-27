@@ -3,6 +3,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js'
 import { supabase } from '@/integrations/supabase/client';
 import { cleanupAuthState, performSecureSignOut } from '@/utils/authCleanup';
+import { setUser, clearUser } from '@/utils/sentry';
 
 interface AuthContextType {
   user: User | null;
@@ -36,11 +37,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       async (event, session) => {
         console.log('Auth state changed:', event);
         setSession(session);
-        setUser(session?.user ?? null);
+        const currentUser = session?.user ?? null;
+        setUser(currentUser);
+        
+        // Update error reporting context
+        if (currentUser) {
+          setUser({
+            id: currentUser.id,
+            email: currentUser.email,
+          });
+        } else {
+          clearUser();
+        }
         
         // Handle sign out events
         if (event === 'SIGNED_OUT') {
           cleanupAuthState();
+          clearUser();
         }
         
         setLoading(false);
@@ -50,7 +63,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      setUser(session?.user ?? null);
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      
+      // Set initial user context for error reporting
+      if (currentUser) {
+        setUser({
+          id: currentUser.id,
+          email: currentUser.email,
+        });
+      }
+      
       setLoading(false);
     });
 

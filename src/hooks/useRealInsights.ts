@@ -42,6 +42,11 @@ export const useRealInsights = () => {
     mutationFn: async () => {
       if (!user?.id) throw new Error('User not authenticated');
 
+      // First, update user progress to ensure latest data
+      await supabase.rpc('update_user_progress', {
+        target_user_id: user.id
+      });
+
       const { data, error } = await supabase.rpc('generate_behavior_insights', {
         target_user_id: user.id
       });
@@ -51,6 +56,7 @@ export const useRealInsights = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['real-insights', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['user-progress', user?.id] });
     }
   });
 

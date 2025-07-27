@@ -183,21 +183,47 @@ const Settings = () => {
       const confirmation = window.prompt("Type 'DELETE' to confirm account deletion:");
       
       if (confirmation === 'DELETE') {
+        setLoading(true);
         try {
           if (isNative) hapticFeedback();
           
-          await signOut();
-          toast({
-            title: "Account deletion initiated",
-            description: "Please contact support to complete account deletion.",
+          // Call the Supabase Edge Function to delete user data
+          const { data, error: edgeFunctionError } = await supabase.functions.invoke('delete-user-data', {
+            body: { user_id: user?.id },
           });
-        } catch (error: any) {
+
+          if (edgeFunctionError) {
+            throw new Error(edgeFunctionError.message);
+          }
+          
+          // Check for errors returned from the Edge Function's response body
+          if (data && data.error) {
+            throw new Error(data.error);
+          }
+
+          // If deletion is successful, sign out the user from the client side
+          await signOut();
+
           toast({
-            title: "Error",
-            description: error.message,
+            title: "Account deleted",
+            description: "Your account and all associated data have been permanently deleted.",
+          });
+          navigate('/auth'); // Redirect to auth page after deletion
+        } catch (error: any) {
+          console.error('Account deletion failed:', error);
+          toast({
+            title: "Account deletion failed",
+            description: error.message || "An unexpected error occurred during deletion.",
             variant: "destructive",
           });
+        } finally {
+          setLoading(false);
         }
+      } else {
+        toast({
+          title: "Deletion cancelled",
+          description: "Account deletion was cancelled.",
+        });
       }
     }
   };
