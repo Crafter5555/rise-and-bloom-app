@@ -38,7 +38,34 @@ export const useDigitalWellbeing = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasSystemAccess, setHasSystemAccess] = useState(false);
 
+  useEffect(() => {
+    checkSystemCapabilities();
+  }, []);
+
+  const checkSystemCapabilities = async () => {
+    try {
+      // Check if we can access system-level usage data
+      // This is highly restricted on both iOS and Android
+      
+      if (typeof window !== 'undefined' && 'navigator' in window) {
+        // Web version - very limited capabilities
+        setHasSystemAccess(false);
+      } else {
+        // Native version - check for actual permissions
+        // In production, this would check for:
+        // - Android: PACKAGE_USAGE_STATS permission
+        // - iOS: Screen Time API access (very limited)
+        setHasSystemAccess(false); // Most apps won't have this access
+      }
+    } catch (error) {
+      console.error('Error checking system capabilities:', error);
+      setHasSystemAccess(false);
+    } finally {
+      setLoading(false);
+    }
+  };
   // App Usage Tracking
   const startAppSession = async (appName: string, categoryId?: string) => {
     if (!user) return null;

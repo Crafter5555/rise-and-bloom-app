@@ -10,6 +10,7 @@ import { SmartInsights } from "@/components/ai/SmartInsights";
 import { AchievementSystem } from "@/components/gamification/AchievementSystem";
 import { SmartScheduler } from "@/components/scheduling/SmartScheduler";
 import { Brain, TrendingUp, BookOpen, Zap, Trophy, Sparkles, Calendar } from "lucide-react";
+import { AppPerformanceMonitor } from "@/components/performance/AppPerformanceMonitor";
 
 const Insights = () => {
   return (
@@ -21,7 +22,7 @@ const Insights = () => {
       
       <div className="flex-1 overflow-auto px-4 pb-20">
         <Tabs defaultValue="ai-coach" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-8">
             <TabsTrigger value="ai-coach" className="text-xs">
               <Brain className="w-4 h-4 mr-1" />
               Coach
@@ -48,7 +49,11 @@ const Insights = () => {
             </TabsTrigger>
             <TabsTrigger value="performance" className="text-xs">
               <Zap className="w-4 h-4 mr-1" />
-              Speed
+              Perf
+            </TabsTrigger>
+            <TabsTrigger value="monitor" className="text-xs">
+              <TrendingUp className="w-4 h-4 mr-1" />
+              Monitor
             </TabsTrigger>
           </TabsList>
 
@@ -79,6 +84,10 @@ const Insights = () => {
 
           <TabsContent value="performance" className="space-y-4">
             <PerformanceOptimizer />
+          </TabsContent>
+
+          <TabsContent value="monitor" className="space-y-4">
+            <AppPerformanceMonitor />
           </TabsContent>
         </Tabs>
       </div>

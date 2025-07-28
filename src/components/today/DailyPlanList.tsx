@@ -35,6 +35,7 @@ export const DailyPlanList = () => {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showPlanEditModal, setShowPlanEditModal] = useState(false);
   const [cleaningUp, setCleaningUp] = useState(false);
+  const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
   const today = format(new Date(), 'yyyy-MM-dd');
@@ -80,8 +81,14 @@ export const DailyPlanList = () => {
       setDailyPlans(sortedData);
     } catch (error) {
       console.error('Error fetching daily plans:', error);
+      toast({
+        title: "Sync Error",
+        description: "Unable to load latest data. Working with cached version.",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
+      setLastSyncTime(new Date());
     }
   };
 
@@ -195,14 +202,7 @@ export const DailyPlanList = () => {
         completed_at: newCompleted ? new Date().toISOString() : null
       };
 
-      const { error } = await supabase
-        .from('daily_plans')
-        .update(updateData)
-        .eq('id', id);
-
-      if (error) throw error;
-
-      // Update local state
+      // Optimistic update for immediate UI feedback
       setDailyPlans(items => 
         items.map(item => 
           item.id === id 
@@ -211,12 +211,34 @@ export const DailyPlanList = () => {
         )
       );
 
+      const { error } = await supabase
+        .from('daily_plans')
+        .update(updateData)
+        .eq('id', id);
+
+      if (error) throw error;
+
       // Update source records based on item type
       if (newCompleted && item.item_id) {
         await updateSourceRecord(item.item_type, item.item_id);
       }
+      
+      setLastSyncTime(new Date());
     } catch (error) {
       console.error('Error updating daily plan:', error);
+      // Revert optimistic update on error
+      setDailyPlans(items => 
+        items.map(item => 
+          item.id === id 
+            ? { ...item, completed: !newCompleted, completed_at: item.completed_at }
+            : item
+        )
+      );
+      toast({
+        title: "Update Failed",
+        description: "Unable to save changes. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 

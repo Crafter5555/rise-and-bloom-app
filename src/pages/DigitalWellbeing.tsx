@@ -8,6 +8,7 @@ import { IntentionalitySettings } from "@/components/digital-wellbeing/Intention
 import { AIReflectionPanel } from "@/components/digital-wellbeing/AIReflectionPanel";
 import { BehaviorInsights } from "@/components/digital-wellbeing/BehaviorInsights";
 import { IntentionalityPopup } from "@/components/digital-wellbeing/IntentionalityPopup";
+import { DigitalWellbeingTracker } from "@/components/digital-wellbeing/DigitalWellbeingTracker";
 import { Link } from "react-router-dom";
 import { Settings, TrendingUp, Brain, Shield, Smartphone, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -161,7 +162,7 @@ const DigitalWellbeing = () => {
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="dashboard" className="text-xs">
             <TrendingUp className="w-4 h-4 mr-1" />
-            Usage
+            Tracker
           </TabsTrigger>
           <TabsTrigger value="insights" className="text-xs">
             <Brain className="w-4 h-4 mr-1" />
@@ -178,7 +179,7 @@ const DigitalWellbeing = () => {
         </TabsList>
 
         <TabsContent value="dashboard" className="space-y-6">
-          <AppUsageDashboard />
+          <DigitalWellbeingTracker />
         </TabsContent>
 
         <TabsContent value="insights" className="space-y-6">

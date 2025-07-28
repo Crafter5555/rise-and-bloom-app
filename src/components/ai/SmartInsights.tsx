@@ -9,6 +9,13 @@ export const SmartInsights = () => {
   const { insights, isLoading, generateInsights, isGenerating } = useRealInsights();
   const [filter, setFilter] = useState<'all' | 'actionable'>('all');
 
+  // Auto-generate insights on component mount if none exist
+  useEffect(() => {
+    if (!isLoading && insights.length === 0) {
+      generateInsights();
+    }
+  }, [isLoading, insights.length, generateInsights]);
+
   const getTypeColor = (type: string) => {
     switch (type) {
       case 'pattern': return 'bg-blue-100 text-blue-800';

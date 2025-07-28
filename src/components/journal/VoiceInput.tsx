@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Mic, MicOff, Square, Loader2 } from "lucide-react";
@@ -15,11 +14,22 @@ export const VoiceInput = ({ onTranscription, disabled = false }: VoiceInputProp
   const [isProcessing, setIsProcessing] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const recognitionRef = useRef<any>(null);
   const { toast } = useToast();
   const { hapticFeedback, isNative } = useMobile();
 
+  // Check for Web Speech API support
+  const hasSpeechRecognition = typeof window !== 'undefined' && 
+    ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window);
+
   const startRecording = async () => {
     try {
+      // Try Web Speech API first (more reliable for transcription)
+      if (hasSpeechRecognition && !isNative) {
+        return startSpeechRecognition();
+      }
+
+      // Fallback to MediaRecorder for native or when Speech API unavailable
       const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: {
           sampleRate: 16000,
@@ -48,9 +58,9 @@ export const VoiceInput = ({ onTranscription, disabled = false }: VoiceInputProp
         try {
           const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
           
-          // For now, we'll use a placeholder transcription service
-          // In a real implementation, this would call a speech-to-text API
-          await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate processing
+          // In production, this would call a real speech-to-text API
+          // For now, we'll simulate with a more realistic delay
+          await new Promise(resolve => setTimeout(resolve, 1500));
           
           // Simulate transcription result
           const mockTranscriptions = [
@@ -103,7 +113,68 @@ export const VoiceInput = ({ onTranscription, disabled = false }: VoiceInputProp
     }
   };
 
+  const startSpeechRecognition = () => {
+    try {
+      const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
+      const recognition = new SpeechRecognition();
+      
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = 'en-US';
+      
+      recognition.onstart = () => {
+        setIsRecording(true);
+        if (isNative) hapticFeedback();
+        toast({
+          title: "Listening...",
+          description: "Speak your journal entry now",
+        });
+      };
+      
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        onTranscription(transcript);
+        
+        toast({
+          title: "Voice captured!",
+          description: "Your speech has been converted to text.",
+        });
+      };
+      
+      recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        toast({
+          title: "Recognition failed",
+          description: "Could not process speech. Please try again.",
+          variant: "destructive",
+        });
+        setIsRecording(false);
+      };
+      
+      recognition.onend = () => {
+        setIsRecording(false);
+      };
+      
+      recognitionRef.current = recognition;
+      recognition.start();
+      
+    } catch (error) {
+      console.error('Error starting speech recognition:', error);
+      toast({
+        title: "Speech recognition unavailable",
+        description: "Your browser doesn't support speech recognition.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const stopRecording = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
+      return;
+    }
+
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);

@@ -10,6 +10,7 @@ export const InsightsPanel = () => {
   const { insights, isLoading, refreshInsights } = useDeviceData();
 
   const getInsightData = () => [
+  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
     { 
       icon: "😴", 
       label: "Sleep", 
@@ -75,6 +76,11 @@ export const InsightsPanel = () => {
     }
   };
 
+  const handleRefresh = async () => {
+    await refreshInsights();
+    setLastRefresh(new Date());
+  };
+
   if (isLoading) {
     return (
       <div className="mb-6">
@@ -109,11 +115,14 @@ export const InsightsPanel = () => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={refreshInsights}
+          onClick={handleRefresh}
           className="h-6 px-2 text-xs"
         >
           <RefreshCw className="w-3 h-3" />
         </Button>
+        <span className="text-xs text-muted-foreground">
+          {lastRefresh.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        </span>
       </div>
       <ScrollArea className="w-full">
         <div className="flex gap-3 pb-2">
