@@ -24,37 +24,37 @@ export const useRealStats = () => {
       ] = await Promise.all([
         supabase
           .from('daily_plans')
-          .select('*')
+          .select('id, completed, plan_date, item_type')
           .eq('user_id', user.id)
           .gte('plan_date', weekAgo),
         
         supabase
           .from('tasks')
-          .select('*')
+          .select('id, completed, created_at')
           .eq('user_id', user.id)
           .gte('created_at', weekAgo),
         
         supabase
           .from('habits')
-          .select('*')
+          .select('id, name, is_active')
           .eq('user_id', user.id)
           .eq('is_active', true),
         
         supabase
           .from('habit_completions')
-          .select('*')
+          .select('id, completion_date, habit_id')
           .eq('user_id', user.id)
           .gte('completion_date', weekAgo),
         
         supabase
           .from('goals')
-          .select('*')
+          .select('id, progress, target_value, status')
           .eq('user_id', user.id)
           .eq('status', 'active'),
         
         supabase
           .from('activities')
-          .select('*')
+          .select('id, is_favorite')
           .eq('user_id', user.id)
       ]);
 
