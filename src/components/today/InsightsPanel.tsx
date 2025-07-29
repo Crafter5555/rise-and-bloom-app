@@ -8,9 +8,9 @@ import { Button } from "@/components/ui/button";
 
 export const InsightsPanel = () => {
   const { insights, isLoading, refreshInsights } = useDeviceData();
+  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
 
   const getInsightData = () => [
-  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
     { 
       icon: "😴", 
       label: "Sleep", 
