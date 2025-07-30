@@ -18,6 +18,7 @@ export default defineConfig(({ mode }) => ({
       registerType: 'autoUpdate',
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        maximumFileSizeToCacheInBytes: 5000000, // 5MB
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -40,6 +41,18 @@ export default defineConfig(({ mode }) => ({
                 maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
               }
             }
+          },
+          {
+            urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/v1\/.*/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'supabase-api-cache',
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 5 // 5 minutes
+              },
+              networkTimeoutSeconds: 10
+            }
           }
         ]
       },
@@ -53,16 +66,20 @@ export default defineConfig(({ mode }) => ({
         orientation: 'portrait',
         scope: '/',
         start_url: '/',
+        categories: ['productivity', 'health', 'lifestyle'],
+        lang: 'en',
         icons: [
           {
             src: '/icon-192x192.png',
             sizes: '192x192',
-            type: 'image/png'
+            type: 'image/png',
+            purpose: 'any'
           },
           {
             src: '/icon-512x512.png',
             sizes: '512x512',
-            type: 'image/png'
+            type: 'image/png',
+            purpose: 'any'
           },
           {
             src: '/icon-512x512.png',
@@ -82,23 +99,27 @@ export default defineConfig(({ mode }) => ({
   build: {
     target: 'esnext',
     minify: 'terser',
+    sourcemap: mode === 'development',
     terserOptions: {
       compress: {
         drop_console: mode === 'production',
-        drop_debugger: mode === 'production'
+        drop_debugger: mode === 'production',
+        pure_funcs: mode === 'production' ? ['console.log', 'console.info'] : []
       }
     },
     rollupOptions: {
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],
-          ui: ['@radix-ui/react-dialog', '@radix-ui/react-tabs', '@radix-ui/react-toast'],
-          capacitor: ['@capacitor/core', '@capacitor/app', '@capacitor/haptics']
+          ui: ['@radix-ui/react-dialog', '@radix-ui/react-tabs', '@radix-ui/react-toast', '@radix-ui/react-select'],
+          capacitor: ['@capacitor/core', '@capacitor/app', '@capacitor/haptics'],
+          supabase: ['@supabase/supabase-js'],
+          charts: ['recharts']
         }
       }
     }
   },
   optimizeDeps: {
-    include: ['react', 'react-dom', '@capacitor/core']
+    include: ['react', 'react-dom', '@capacitor/core', '@supabase/supabase-js']
   }
 }));

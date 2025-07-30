@@ -5,7 +5,8 @@ const config: CapacitorConfig = {
   appName: 'Rise and Bloom',
   webDir: 'dist',
   server: {
-    androidScheme: 'https'
+    androidScheme: 'https',
+    cleartext: false
   },
   plugins: {
     SplashScreen: {
@@ -65,7 +66,11 @@ const config: CapacitorConfig = {
       signingType: 'apksigner',
       minSdkVersion: 24,
       compileSdkVersion: 34,
-      targetSdkVersion: 34
+      targetSdkVersion: 34,
+      gradle: {
+        minifyEnabled: true,
+        shrinkResources: true
+      }
     },
     backgroundColor: '#3b82f6'
   }

@@ -40,7 +40,7 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             
             // Enable R8 full mode for better optimization
-            android.enableR8.fullMode = true
+            // android.enableR8.fullMode = true // Commented out for compatibility
             
             // Production signing configuration
             signingConfig signingConfigs.release
