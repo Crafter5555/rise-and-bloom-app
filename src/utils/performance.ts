@@ -76,4 +76,3 @@ export const cancelIdleCallback = (id: number) => {
   } else {
     clearTimeout(id);
   }
-}
