@@ -4,17 +4,11 @@ import App from './App.tsx'
 import './index.css'
 import { ErrorBoundary } from './components/mobile/ErrorBoundary'
 import { errorReporter } from './utils/sentry'
-import { optimizeForProduction } from './utils/performance'
 
 // Initialize error reporting
 errorReporter.initialize({
   environment: process.env.NODE_ENV || 'development'
 });
-
-// Initialize production optimizations
-if (process.env.NODE_ENV === 'production') {
-  optimizeForProduction();
-}
 
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
