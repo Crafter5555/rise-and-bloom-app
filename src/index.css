@@ -171,22 +171,34 @@
   .safe-area-pt {
     padding-top: env(safe-area-inset-top);
   }
-  
+
   .safe-area-pb {
     padding-bottom: env(safe-area-inset-bottom);
   }
-  
+
   .safe-area-pl {
     padding-left: env(safe-area-inset-left);
   }
-  
+
   .safe-area-pr {
+    padding-right: env(safe-area-inset-right);
+  }
+
+  .safe-area-inset {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
   }
 
   /* Touch-friendly interactions */
   .touch-manipulation {
     touch-action: manipulation;
+  }
+
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
   }
 
   /* Prevent text selection on interactive elements */
@@ -208,7 +220,7 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
-  
+
   .hide-scrollbar::-webkit-scrollbar {
     display: none;
   }
@@ -222,6 +234,51 @@
   .backdrop-blur-mobile {
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
+  }
+
+  /* Ripple effect for touch feedback */
+  .ripple {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .ripple::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    width: 100px;
+    height: 100px;
+    margin-top: -50px;
+    margin-left: -50px;
+    top: 50%;
+    left: 50%;
+    animation: ripple-animation 0.6s;
+    opacity: 0;
+  }
+
+  @keyframes ripple-animation {
+    from {
+      opacity: 1;
+      transform: scale(0);
+    }
+    to {
+      opacity: 0;
+      transform: scale(4);
+    }
+  }
+
+  /* Skeleton loading for mobile */
+  .skeleton {
+    @apply animate-pulse bg-muted rounded;
+  }
+
+  .skeleton-text {
+    @apply h-4 bg-muted rounded w-full;
+  }
+
+  .skeleton-circle {
+    @apply rounded-full bg-muted;
   }
 }
 

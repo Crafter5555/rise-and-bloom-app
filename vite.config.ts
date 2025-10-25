@@ -100,26 +100,61 @@ export default defineConfig(({ mode }) => ({
     target: 'esnext',
     minify: 'terser',
     sourcemap: mode === 'development',
+    cssCodeSplit: true,
+    chunkSizeWarningLimit: 1000,
     terserOptions: {
       compress: {
         drop_console: mode === 'production',
         drop_debugger: mode === 'production',
-        pure_funcs: mode === 'production' ? ['console.log', 'console.info'] : []
+        pure_funcs: mode === 'production' ? ['console.log', 'console.info'] : [],
+        passes: 2
+      },
+      mangle: {
+        safari10: true
       }
     },
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom'],
-          ui: ['@radix-ui/react-dialog', '@radix-ui/react-tabs', '@radix-ui/react-toast', '@radix-ui/react-select'],
-          capacitor: ['@capacitor/core', '@capacitor/app', '@capacitor/haptics'],
-          supabase: ['@supabase/supabase-js'],
-          charts: ['recharts']
-        }
+        manualChunks: (id) => {
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
+              return 'vendor-react';
+            }
+            if (id.includes('@radix-ui')) {
+              return 'vendor-ui';
+            }
+            if (id.includes('@capacitor')) {
+              return 'vendor-capacitor';
+            }
+            if (id.includes('@supabase')) {
+              return 'vendor-supabase';
+            }
+            if (id.includes('recharts') || id.includes('d3')) {
+              return 'vendor-charts';
+            }
+            if (id.includes('lucide-react')) {
+              return 'vendor-icons';
+            }
+            return 'vendor-other';
+          }
+        },
+        assetFileNames: (assetInfo) => {
+          const info = assetInfo.name?.split('.');
+          const ext = info?.[info.length - 1];
+          if (/png|jpe?g|svg|gif|tiff|bmp|ico/i.test(ext || '')) {
+            return 'assets/images/[name]-[hash][extname]';
+          } else if (/woff|woff2|eot|ttf|otf/i.test(ext || '')) {
+            return 'assets/fonts/[name]-[hash][extname]';
+          }
+          return 'assets/[name]-[hash][extname]';
+        },
+        chunkFileNames: 'assets/js/[name]-[hash].js',
+        entryFileNames: 'assets/js/[name]-[hash].js',
       }
     }
   },
   optimizeDeps: {
-    include: ['react', 'react-dom', '@capacitor/core', '@supabase/supabase-js']
+    include: ['react', 'react-dom', 'react-router-dom', '@capacitor/core', '@supabase/supabase-js'],
+    exclude: ['@capacitor/splash-screen', '@capacitor/status-bar']
   }
 }));
