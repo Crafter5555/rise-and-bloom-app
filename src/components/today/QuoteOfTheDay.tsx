@@ -56,13 +56,15 @@ export const QuoteOfTheDay = () => {
   }, []);
 
   return (
-    <Card className="p-4 mb-6 bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5 border-primary/20">
-      <div className="text-center">
-        <h3 className="text-sm font-semibold text-primary mb-2">Quote of the Day</h3>
-        <blockquote className="text-base font-medium text-foreground mb-2 leading-relaxed">
+    <Card className="p-6 mb-6 bg-card border-primary/30 shadow-medium">
+      <div className="text-center space-y-4">
+        <h3 className="text-xs font-bold text-primary mb-3 uppercase tracking-widest">
+          QUOTE OF THE DAY
+        </h3>
+        <blockquote className="text-lg font-semibold text-foreground leading-relaxed">
           "{dailyQuote.text}"
         </blockquote>
-        <cite className="text-sm text-muted-foreground font-medium">
+        <cite className="text-sm text-muted-foreground font-medium block">
           — {dailyQuote.author}
         </cite>
       </div>

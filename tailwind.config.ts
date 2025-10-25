@@ -82,12 +82,13 @@ export default {
 			backgroundImage: {
 				'gradient-primary': 'var(--gradient-primary)',
 				'gradient-success': 'var(--gradient-success)',
-				'gradient-calm': 'var(--gradient-calm)'
+				'gradient-dark': 'var(--gradient-dark)'
 			},
 			boxShadow: {
 				'soft': 'var(--shadow-soft)',
 				'medium': 'var(--shadow-medium)',
-				'strong': 'var(--shadow-strong)'
+				'strong': 'var(--shadow-strong)',
+				'golden': 'var(--shadow-golden)'
 			},
 			borderRadius: {
 				lg: 'var(--radius)',

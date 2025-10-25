@@ -2,143 +2,145 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Modern self-improvement app design system with calm, therapeutic colors */
+/* InspireWear-inspired premium dark design system */
 
 @layer base {
   :root {
-    /* Base colors - soft, calming palette */
-    --background: 248 250 252;
-    --foreground: 215 28% 17%;
+    /* Base colors - Deep black foundations */
+    --background: 0 0% 7%;
+    --foreground: 0 0% 98%;
 
-    /* Cards and surfaces */
-    --card: 255 255 255;
-    --card-foreground: 215 28% 17%;
+    /* Cards and surfaces - Rich charcoal */
+    --card: 0 0% 12%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 255 255 255;
-    --popover-foreground: 215 28% 17%;
+    --popover: 0 0% 12%;
+    --popover-foreground: 0 0% 98%;
 
-    /* Primary - Calming blue for focus and trust */
-    --primary: 214 84% 56%;
-    --primary-foreground: 255 255 255;
-    --primary-light: 214 84% 66%;
-    --primary-dark: 214 84% 46%;
+    /* Primary - Signature golden amber */
+    --primary: 43 96% 56%;
+    --primary-foreground: 0 0% 7%;
+    --primary-light: 43 96% 66%;
+    --primary-dark: 43 96% 46%;
 
-    /* Secondary - Soft gray for balance */
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 215 28% 17%;
+    /* Secondary - Dark charcoal */
+    --secondary: 0 0% 18%;
+    --secondary-foreground: 0 0% 98%;
 
     /* Muted tones */
-    --muted: 220 14% 96%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 0 0% 18%;
+    --muted-foreground: 0 0% 65%;
 
-    /* Accent - Warm green for growth and success */
-    --accent: 162 63% 41%;
-    --accent-foreground: 255 255 255;
-    --accent-light: 162 63% 51%;
+    /* Accent - Golden highlights */
+    --accent: 43 96% 56%;
+    --accent-foreground: 0 0% 7%;
+    --accent-light: 43 96% 66%;
 
     /* Status colors */
-    --success: 142 71% 45%;
-    --success-foreground: 255 255 255;
-    
+    --success: 43 96% 56%;
+    --success-foreground: 0 0% 7%;
+
     --warning: 38 92% 50%;
-    --warning-foreground: 255 255 255;
-    
+    --warning-foreground: 0 0% 7%;
+
     --destructive: 0 84% 60%;
-    --destructive-foreground: 255 255 255;
+    --destructive-foreground: 0 0% 98%;
 
     /* UI elements */
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 214 84% 56%;
+    --border: 0 0% 22%;
+    --input: 0 0% 15%;
+    --ring: 43 96% 56%;
 
     /* Progress indicators */
-    --progress-high: 142 71% 45%;
+    --progress-high: 43 96% 56%;
     --progress-medium: 38 92% 50%;
     --progress-low: 0 84% 60%;
 
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(214 84% 56%), hsl(214 84% 66%));
-    --gradient-success: linear-gradient(135deg, hsl(142 71% 45%), hsl(162 63% 41%));
-    --gradient-calm: linear-gradient(180deg, hsl(248 250 252), hsl(220 14% 96%));
+    --gradient-primary: linear-gradient(135deg, hsl(43 96% 56%), hsl(43 96% 66%));
+    --gradient-success: linear-gradient(135deg, hsl(43 96% 46%), hsl(43 96% 56%));
+    --gradient-dark: linear-gradient(180deg, hsl(0 0% 7%), hsl(0 0% 12%));
 
-    /* Shadows for depth */
-    --shadow-soft: 0 2px 8px hsl(215 28% 17% / 0.08);
-    --shadow-medium: 0 4px 16px hsl(215 28% 17% / 0.12);
-    --shadow-strong: 0 8px 32px hsl(215 28% 17% / 0.16);
+    /* Shadows */
+    --shadow-soft: 0 2px 12px hsl(0 0% 0% / 0.5);
+    --shadow-medium: 0 4px 24px hsl(0 0% 0% / 0.6);
+    --shadow-strong: 0 8px 40px hsl(0 0% 0% / 0.7);
+    --shadow-golden: 0 4px 20px hsl(43 96% 56% / 0.3);
 
     /* Border radius system */
-    --radius: 12px;
+    --radius: 8px;
   }
 
   .dark {
-    /* Base colors - dark, calming palette */
-    --background: 222 84% 5%;
-    --foreground: 210 40% 98%;
+    /* Base colors - Deep black foundations */
+    --background: 0 0% 7%;
+    --foreground: 0 0% 98%;
 
-    /* Cards and surfaces */
-    --card: 224 71% 4%;
-    --card-foreground: 210 40% 98%;
+    /* Cards and surfaces - Rich charcoal */
+    --card: 0 0% 12%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 224 71% 4%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 12%;
+    --popover-foreground: 0 0% 98%;
 
-    /* Primary - Bright blue for dark mode */
-    --primary: 217 91% 70%;
-    --primary-foreground: 222 84% 5%;
-    --primary-light: 217 91% 80%;
-    --primary-dark: 217 91% 60%;
+    /* Primary - Signature golden amber */
+    --primary: 43 96% 56%;
+    --primary-foreground: 0 0% 7%;
+    --primary-light: 43 96% 66%;
+    --primary-dark: 43 96% 46%;
 
-    /* Secondary - Dark gray */
-    --secondary: 217 32% 17%;
-    --secondary-foreground: 210 40% 98%;
+    /* Secondary - Dark charcoal */
+    --secondary: 0 0% 18%;
+    --secondary-foreground: 0 0% 98%;
 
     /* Muted tones */
-    --muted: 217 32% 17%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 0 0% 18%;
+    --muted-foreground: 0 0% 65%;
 
-    /* Accent - Bright green for dark mode */
-    --accent: 142 76% 60%;
-    --accent-foreground: 222 84% 5%;
-    --accent-light: 142 76% 70%;
+    /* Accent - Golden highlights */
+    --accent: 43 96% 56%;
+    --accent-foreground: 0 0% 7%;
+    --accent-light: 43 96% 66%;
 
     /* Status colors */
-    --success: 142 71% 55%;
-    --success-foreground: 222 84% 5%;
-    
-    --warning: 38 92% 60%;
-    --warning-foreground: 222 84% 5%;
-    
-    --destructive: 0 62% 50%;
-    --destructive-foreground: 210 40% 98%;
+    --success: 43 96% 56%;
+    --success-foreground: 0 0% 7%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 7%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
 
     /* UI elements */
-    --border: 217 32% 17%;
-    --input: 217 32% 17%;
-    --ring: 217 91% 70%;
+    --border: 0 0% 22%;
+    --input: 0 0% 15%;
+    --ring: 43 96% 56%;
 
     /* Progress indicators */
-    --progress-high: 142 71% 55%;
-    --progress-medium: 38 92% 60%;
-    --progress-low: 0 62% 50%;
+    --progress-high: 43 96% 56%;
+    --progress-medium: 38 92% 50%;
+    --progress-low: 0 84% 60%;
 
-    /* Gradients for dark mode */
-    --gradient-primary: linear-gradient(135deg, hsl(217 91% 70%), hsl(217 91% 80%));
-    --gradient-success: linear-gradient(135deg, hsl(142 71% 55%), hsl(142 76% 60%));
-    --gradient-calm: linear-gradient(180deg, hsl(222 84% 5%), hsl(217 32% 17%));
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(43 96% 56%), hsl(43 96% 66%));
+    --gradient-success: linear-gradient(135deg, hsl(43 96% 46%), hsl(43 96% 56%));
+    --gradient-dark: linear-gradient(180deg, hsl(0 0% 7%), hsl(0 0% 12%));
 
-    /* Shadows for dark mode */
-    --shadow-soft: 0 2px 8px hsl(0 0% 0% / 0.3);
-    --shadow-medium: 0 4px 16px hsl(0 0% 0% / 0.4);
-    --shadow-strong: 0 8px 32px hsl(0 0% 0% / 0.5);
+    /* Shadows */
+    --shadow-soft: 0 2px 12px hsl(0 0% 0% / 0.5);
+    --shadow-medium: 0 4px 24px hsl(0 0% 0% / 0.6);
+    --shadow-strong: 0 8px 40px hsl(0 0% 0% / 0.7);
+    --shadow-golden: 0 4px 20px hsl(43 96% 56% / 0.3);
 
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 0 0% 10%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 43 96% 56%;
+    --sidebar-primary-foreground: 0 0% 7%;
+    --sidebar-accent: 0 0% 18%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 0 0% 22%;
+    --sidebar-ring: 43 96% 56%;
   }
 }
 

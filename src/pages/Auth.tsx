@@ -161,9 +161,9 @@ const Auth = () => {
   };
 
   const getPasswordStrengthColor = () => {
-    if (passwordStrength <= 1) return "bg-red-500";
-    if (passwordStrength <= 3) return "bg-yellow-500";
-    return "bg-green-500";
+    if (passwordStrength <= 1) return "bg-destructive";
+    if (passwordStrength <= 3) return "bg-warning";
+    return "bg-primary";
   };
 
   const getPasswordStrengthText = () => {
@@ -173,20 +173,20 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md shadow-lg">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Welcome to MindFlow</CardTitle>
-          <CardDescription>Your personal wellness and productivity companion</CardDescription>
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <Card className="w-full max-w-md shadow-strong border-border">
+        <CardHeader className="text-center space-y-3">
+          <CardTitle className="text-3xl font-extrabold tracking-tight">RISE & BLOOM</CardTitle>
+          <CardDescription className="text-base font-medium">Your journey to excellence starts here</CardDescription>
         </CardHeader>
         <CardContent>
           {/* Security Notice */}
-          <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+          <div className="mb-4 p-4 bg-secondary rounded-lg border border-primary/20">
             <div className="flex items-center gap-2 mb-1">
-              <Shield className="w-4 h-4 text-blue-600" />
-              <span className="text-sm font-medium text-blue-800">Secure & Private</span>
+              <Shield className="w-4 h-4 text-primary" />
+              <span className="text-sm font-bold text-foreground uppercase tracking-wide">Secure & Private</span>
             </div>
-            <p className="text-xs text-blue-700">
+            <p className="text-xs text-muted-foreground font-medium">
               Your data is encrypted and protected. We never share your personal information.
             </p>
           </div>

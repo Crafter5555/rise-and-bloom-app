@@ -103,19 +103,19 @@ const Today = () => {
   };
 
   const getEnergyColor = () => {
-    if (energyLevel >= 8) return "text-green-600";
-    if (energyLevel >= 6) return "text-yellow-600";
-    return "text-red-600";
+    if (energyLevel >= 8) return "text-primary";
+    if (energyLevel >= 6) return "text-warning";
+    return "text-destructive";
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 pb-20 px-4 pt-6 safe-area-inset">
+    <div className="min-h-screen bg-background pb-20 px-4 pt-6 safe-area-inset">
       {/* Enhanced Header with Energy Level */}
       <div className="mb-6">
         <div className="flex justify-between items-start mb-4">
           <div className="flex-1">
-            <h1 className="text-3xl font-bold text-foreground mb-2">
-              {getGreeting()}, {userName} 👋
+            <h1 className="text-3xl font-extrabold text-foreground mb-2 tracking-tight">
+              {getGreeting()}, {userName}
             </h1>
             <div className="flex items-center justify-between mb-3">
               <div>
@@ -153,13 +153,16 @@ const Today = () => {
         </div>
         
         {/* Enhanced Quote Card */}
-        <Card className="mb-4">
-          <CardContent className="p-4">
-            <div className="text-center">
-              <blockquote className="text-sm font-medium text-foreground mb-2 leading-relaxed">
+        <Card className="mb-4 border-primary/30 shadow-medium">
+          <CardContent className="p-5">
+            <div className="text-center space-y-3">
+              <div className="text-xs font-bold text-primary uppercase tracking-widest mb-2">
+                QUOTE OF THE DAY
+              </div>
+              <blockquote className="text-base font-semibold text-foreground leading-relaxed">
                 "{dailyQuote.text}"
               </blockquote>
-              <cite className="text-xs text-muted-foreground font-medium">
+              <cite className="text-sm text-muted-foreground font-medium block">
                 — {dailyQuote.author}
               </cite>
             </div>
@@ -168,25 +171,25 @@ const Today = () => {
 
         {/* Quick Stats Dashboard */}
         <div className="grid grid-cols-3 gap-3 mb-4">
-          <Card className="p-3 text-center">
+          <Card className="p-3 text-center border-border shadow-soft">
             <div className="flex flex-col items-center">
               <Target className="w-5 h-5 text-primary mb-1" />
-              <span className="text-lg font-bold text-foreground">{stats?.habits.total || 0}</span>
-              <span className="text-xs text-muted-foreground">Habits</span>
+              <span className="text-2xl font-extrabold text-foreground">{stats?.habits.total || 0}</span>
+              <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wide">Habits</span>
             </div>
           </Card>
-          <Card className="p-3 text-center">
+          <Card className="p-3 text-center border-border shadow-soft">
             <div className="flex flex-col items-center">
-              <Activity className="w-5 h-5 text-green-600 mb-1" />
-              <span className="text-lg font-bold text-foreground">{stats?.today.completionRate || 0}%</span>
-              <span className="text-xs text-muted-foreground">Complete</span>
+              <Activity className="w-5 h-5 text-primary mb-1" />
+              <span className="text-2xl font-extrabold text-foreground">{stats?.today.completionRate || 0}%</span>
+              <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wide">Done</span>
             </div>
           </Card>
-          <Card className="p-3 text-center">
+          <Card className="p-3 text-center border-border shadow-soft">
             <div className="flex flex-col items-center">
-              <Brain className="w-5 h-5 text-purple-600 mb-1" />
-              <span className="text-lg font-bold text-foreground">{stats?.overview.currentStreak || 0}</span>
-              <span className="text-xs text-muted-foreground">Streak</span>
+              <Brain className="w-5 h-5 text-primary mb-1" />
+              <span className="text-2xl font-extrabold text-foreground">{stats?.overview.currentStreak || 0}</span>
+              <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wide">Streak</span>
             </div>
           </Card>
         </div>
