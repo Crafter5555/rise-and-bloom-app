@@ -182,7 +182,7 @@ const Planning = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 pb-20 px-4 pt-6 safe-area-inset">
+    <div className="min-h-screen bg-background pb-20 px-4 pt-6 safe-area-inset">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-foreground mb-2">Planning</h1>

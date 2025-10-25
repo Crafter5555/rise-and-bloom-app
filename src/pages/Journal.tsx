@@ -44,7 +44,7 @@ const Journal = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 pb-20 px-4 pt-6 safe-area-inset">
+    <div className="min-h-screen bg-background pb-20 px-4 pt-6 safe-area-inset">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>

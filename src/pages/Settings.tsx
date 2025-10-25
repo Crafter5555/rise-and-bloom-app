@@ -229,7 +229,7 @@ const Settings = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 pb-20 px-4 pt-6">
+    <div className="min-h-screen bg-background pb-20 px-4 pt-6">
       {/* Header */}
       <div className="mb-6 flex items-center gap-4">
         <Button
