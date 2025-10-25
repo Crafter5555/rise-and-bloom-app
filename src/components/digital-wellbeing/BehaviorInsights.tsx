@@ -1,11 +1,21 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { TrendingUp, TrendingDown, Clock, Smartphone, Eye, AlertTriangle } from "lucide-react";
+import { TrendingUp, TrendingDown, Clock, Smartphone, Eye, AlertTriangle, Loader2 } from "lucide-react";
+import { useRealBehaviorInsights } from "@/hooks/useRealBehaviorInsights";
 
 export const BehaviorInsights = () => {
-  // Mock behavior data
-  const weeklyTrends = [
+  const { weeklyTrends, attentionData, distractionPatterns, sessionTriggers, isLoading } = useRealBehaviorInsights();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
+
+  const mockWeeklyTrends = [
     {
       app: "Instagram",
       icon: "📸",
@@ -52,36 +62,32 @@ export const BehaviorInsights = () => {
     }
   ];
 
+  const displayTrends = weeklyTrends.length > 0 ? weeklyTrends : mockWeeklyTrends;
+  const displayPatterns = distractionPatterns.length > 0 ? distractionPatterns : [
+    { time: "9-11 AM", intensity: 40, label: "Light browsing" },
+    { time: "1-3 PM", intensity: 85, label: "Heavy scrolling" },
+    { time: "7-10 PM", intensity: 95, label: "Peak usage" },
+    { time: "10 PM+", intensity: 60, label: "Wind-down browsing" }
+  ];
+  const displayTriggers = sessionTriggers.length > 0 ? sessionTriggers : [
+    { trigger: "Boredom/Habit", percentage: 43, color: "bg-red-500" },
+    { trigger: "Notification", percentage: 28, color: "bg-orange-500" },
+    { trigger: "Specific Purpose", percentage: 19, color: "bg-green-500" },
+    { trigger: "Social Check", percentage: 10, color: "bg-purple-500" }
+  ];
+
   const patterns = [
     {
       title: "Peak Distraction Windows",
       icon: <Clock className="w-5 h-5 text-orange-500" />,
-      data: [
-        { time: "9-11 AM", intensity: 40, label: "Light browsing" },
-        { time: "1-3 PM", intensity: 85, label: "Heavy scrolling" },
-        { time: "7-10 PM", intensity: 95, label: "Peak usage" },
-        { time: "10 PM+", intensity: 60, label: "Wind-down browsing" }
-      ]
+      data: displayPatterns
     },
     {
       title: "Session Triggers",
       icon: <Smartphone className="w-5 h-5 text-blue-500" />,
-      data: [
-        { trigger: "Boredom/Habit", percentage: 43, color: "bg-red-500" },
-        { trigger: "Notification", percentage: 28, color: "bg-orange-500" },
-        { trigger: "Specific Purpose", percentage: 19, color: "bg-green-500" },
-        { trigger: "Social Check", percentage: 10, color: "bg-purple-500" }
-      ]
+      data: displayTriggers
     }
   ];
-
-  const attentionData = {
-    focusScore: 6.2,
-    attentionSpan: "4m 32s",
-    deepWork: "2h 18m",
-    interruptions: 23,
-    multitasking: 67
-  };
 
   const getTrendIcon = (direction: string) => {
     return direction === 'up' ? 
@@ -105,7 +111,7 @@ export const BehaviorInsights = () => {
         <h3 className="text-lg font-semibold mb-4">This Week's Behavior Trends</h3>
         
         <div className="space-y-4">
-          {weeklyTrends.map((trend, index) => (
+          {displayTrends.map((trend, index) => (
             <div key={index} className="p-4 border rounded-lg space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
