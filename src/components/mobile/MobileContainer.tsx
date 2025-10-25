@@ -17,9 +17,9 @@ export const MobileContainer = ({
   const { isKeyboardOpen } = useMobile();
 
   return (
-    <div 
+    <div
       className={cn(
-        "min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 safe-area-inset",
+        "min-h-screen bg-background safe-area-inset",
         withHeader && "pt-safe-area",
         withBottomNav && !isKeyboardOpen && "pb-20",
         className
