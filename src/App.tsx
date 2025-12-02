@@ -20,6 +20,7 @@ const Settings = lazy(() => import("@/pages/Settings"));
 const Debug = lazy(() => import("@/pages/Debug"));
 const Community = lazy(() => import("@/pages/Community"));
 const Insights = lazy(() => import("@/pages/Insights"));
+const Journeys = lazy(() => import("@/pages/Journeys"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -56,6 +57,7 @@ function App() {
                   <Route path="/digital-wellbeing" element={<DigitalWellbeing />} />
                   <Route path="/community" element={<Community />} />
                   <Route path="/insights" element={<Insights />} />
+                  <Route path="/journeys" element={<Journeys />} />
                   <Route path="/stats" element={<Stats />} />
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/debug" element={<Debug />} />
