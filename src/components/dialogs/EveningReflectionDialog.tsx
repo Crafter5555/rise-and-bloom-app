@@ -7,7 +7,7 @@ import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { ArrowLeft, X } from "lucide-react";
-import { saveEveningQuiz } from "@/utils/quizStorage";
+import { useJournal } from "@/hooks/useJournal";
 import { useToast } from "@/hooks/use-toast";
 
 interface EveningReflectionDialogProps {
@@ -52,17 +52,43 @@ export const EveningReflectionDialog = ({ open, onOpenChange }: EveningReflectio
   // Mock goals data - in real app this would come from state/props
   const mockGoals = ["fudis", "Exercise for 30 minutes", "Read for 20 minutes"];
 
-  const handleNext = () => {
+  const { createOrUpdateEntry } = useJournal();
+
+  const handleNext = async () => {
     if (currentStep < totalSteps) {
       setCurrentStep(currentStep + 1);
     } else {
-      // Complete the evening reflection
-      saveEveningQuiz(eveningData);
-      toast({
-        title: "Evening reflection completed! 🌙",
-        description: "Your responses have been saved to your journal.",
+      // Complete the evening reflection and save to database
+      const today = new Date().toISOString().split('T')[0];
+      const { error } = await createOrUpdateEntry('evening', today, {
+        overall_mood: eveningData.overallMood,
+        evening_energy: eveningData.energyLevel,
+        day_success_rating: 8,
+        completed_goals: eveningData.completedGoals,
+        gratitude_items: [
+          eveningData.gratitude1,
+          eveningData.gratitude2,
+          eveningData.gratitude3
+        ].filter(g => g.trim()),
+        tomorrow_focus: eveningData.tomorrowPriority,
+        reflection_notes: [eveningData.improvements, eveningData.otherThoughts]
+          .filter(n => n.trim())
+          .join('\n\n'),
       });
-      handleClose();
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: "Failed to save evening reflection. Please try again.",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Evening reflection completed! 🌙",
+          description: "Your responses have been saved to your journal.",
+        });
+        handleClose();
+      }
     }
   };
 

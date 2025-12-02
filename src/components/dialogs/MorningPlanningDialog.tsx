@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 import { ArrowLeft, Plus, X } from "lucide-react";
-import { saveMorningQuiz } from "@/utils/quizStorage";
+import { useJournal } from "@/hooks/useJournal";
 import { useToast } from "@/hooks/use-toast";
 
 interface MorningPlanningDialogProps {
@@ -34,25 +34,42 @@ export const MorningPlanningDialog = ({ open, onOpenChange }: MorningPlanningDia
     gratitude: ""
   });
   const { toast } = useToast();
+  const { createOrUpdateEntry } = useJournal();
 
   const totalSteps = 6;
-  const currentDate = new Date().toLocaleDateString('en-US', { 
-    month: 'long', 
-    day: 'numeric', 
-    year: 'numeric' 
+  const currentDate = new Date().toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric'
   });
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentStep < totalSteps) {
       setCurrentStep(currentStep + 1);
     } else {
-      // Complete the morning planning
-      saveMorningQuiz(morningData);
-      toast({
-        title: "Morning planning completed! ☀️",
-        description: "Your responses have been saved to your journal.",
+      // Complete the morning planning and save to database
+      const today = new Date().toISOString().split('T')[0];
+      const { error } = await createOrUpdateEntry('morning', today, {
+        sleep_quality: morningData.sleepQuality,
+        sleep_hours: morningData.sleepHours,
+        morning_mood: 7,
+        main_focus: morningData.mainFocus,
+        top_priorities: morningData.dailyGoals.filter(g => g.trim()),
       });
-      handleClose();
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: "Failed to save morning planning. Please try again.",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Morning planning completed! ☀️",
+          description: "Your responses have been saved to your journal.",
+        });
+        handleClose();
+      }
     }
   };
 

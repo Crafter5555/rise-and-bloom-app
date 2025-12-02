@@ -6,40 +6,71 @@ import { MorningPlanningDialog } from "@/components/dialogs/MorningPlanningDialo
 import { EveningReflectionDialog } from "@/components/dialogs/EveningReflectionDialog";
 import { VoiceInput } from "@/components/journal/VoiceInput";
 import { Plus, Edit3 } from "lucide-react";
-import { getRecentQuizEntries, hasCompletedMorningQuiz, hasCompletedEveningQuiz, getTodayDateKey } from "@/utils/quizStorage";
+import { useJournal } from "@/hooks/useJournal";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 const Journal = () => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const { entries, getStreak, hasCompletedToday } = useJournal();
   const [morningPlanningOpen, setMorningPlanningOpen] = useState(false);
   const [eveningReflectionOpen, setEveningReflectionOpen] = useState(false);
-  const [recentEntries, setRecentEntries] = useState<Array<{ date: string; entry: any }>>([]);
+  const [hasTodayMorning, setHasTodayMorning] = useState(false);
+  const [hasTodayEvening, setHasTodayEvening] = useState(false);
+  const [streak, setStreak] = useState(0);
   const [quickNote, setQuickNote] = useState("");
   const [showQuickNote, setShowQuickNote] = useState(false);
 
   useEffect(() => {
-    setRecentEntries(getRecentQuizEntries());
-  }, []);
+    const checkCompletions = async () => {
+      const morning = await hasCompletedToday('morning');
+      const evening = await hasCompletedToday('evening');
+      setHasTodayMorning(morning);
+      setHasTodayEvening(evening);
+      const currentStreak = await getStreak();
+      setStreak(currentStreak);
+    };
 
-  const todayKey = getTodayDateKey();
-  const hasTodayMorning = hasCompletedMorningQuiz();
-  const hasTodayEvening = hasCompletedEveningQuiz();
+    if (user) {
+      checkCompletions();
+    }
+  }, [user, entries]);
 
   const handleVoiceTranscription = (text: string) => {
     setQuickNote(prev => prev + (prev ? ' ' : '') + text);
   };
 
-  const saveQuickNote = () => {
-    if (quickNote.trim()) {
-      // Save to localStorage for now (could be enhanced to save to Supabase)
-      const savedNotes = JSON.parse(localStorage.getItem('quickNotes') || '[]');
-      savedNotes.unshift({
-        id: Date.now(),
-        text: quickNote.trim(),
-        timestamp: new Date().toISOString()
-      });
-      localStorage.setItem('quickNotes', JSON.stringify(savedNotes.slice(0, 50))); // Keep last 50
-      
-      setQuickNote("");
-      setShowQuickNote(false);
+  const saveQuickNote = async () => {
+    if (quickNote.trim() && user) {
+      try {
+        const { error } = await supabase
+          .from('mood_tracking')
+          .insert({
+            user_id: user.id,
+            mood_score: 7,
+            notes: quickNote.trim(),
+            tags: ['quick-note']
+          });
+
+        if (error) throw error;
+
+        toast({
+          title: "Note Saved",
+          description: "Your quick note has been saved successfully"
+        });
+
+        setQuickNote("");
+        setShowQuickNote(false);
+      } catch (error) {
+        console.error('Error saving quick note:', error);
+        toast({
+          title: "Error",
+          description: "Failed to save quick note",
+          variant: "destructive"
+        });
+      }
     }
   };
 
@@ -108,7 +139,7 @@ const Journal = () => {
           </div>
           <div className="text-right">
             <div className="text-2xl font-bold text-warning">
-              {recentEntries.filter(e => e.entry.morning || e.entry.evening).length}
+              {streak}
             </div>
           </div>
         </div>
@@ -117,8 +148,8 @@ const Journal = () => {
       {/* Recent Entries */}
       <div className="mb-6">
         <h3 className="text-lg font-semibold text-foreground mb-4">Recent Entries</h3>
-        
-        {recentEntries.length === 0 ? (
+
+        {entries.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-4xl mb-4">📖</div>
             <h4 className="text-lg font-medium text-foreground mb-2">No journal entries yet</h4>
@@ -128,48 +159,48 @@ const Journal = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            {recentEntries.map((entry, index) => (
-              <Card key={index} className="p-4 shadow-soft">
+            {entries.slice(0, 10).map((entry) => (
+              <Card key={entry.id} className="p-4 shadow-soft">
                 <div className="flex justify-between items-start mb-3">
                   <h4 className="font-semibold text-foreground">
-                    {new Date(entry.date).toLocaleDateString('en-US', { 
-                      weekday: 'long', 
-                      month: 'long', 
-                      day: 'numeric' 
+                    {new Date(entry.entry_date).toLocaleDateString('en-US', {
+                      weekday: 'long',
+                      month: 'long',
+                      day: 'numeric'
                     })}
                   </h4>
                   <div className="flex gap-1">
-                    {entry.entry.morning && <span className="text-yellow-500">☀️</span>}
-                    {entry.entry.evening && <span className="text-blue-500">🌙</span>}
+                    {entry.entry_type === 'morning' && <span className="text-yellow-500">☀️</span>}
+                    {entry.entry_type === 'evening' && <span className="text-blue-500">🌙</span>}
                   </div>
                 </div>
-                {entry.entry.morning && (
+                {entry.entry_type === 'morning' && (
                   <div className="mb-3 p-3 bg-yellow-50 rounded-lg">
                     <div className="flex items-center gap-2 mb-2">
                       <span className="text-yellow-600">☀️</span>
                       <span className="text-sm font-medium text-yellow-800">Morning Planning</span>
                     </div>
-                    {entry.entry.morning.mainFocus && (
+                    {entry.main_focus && (
                       <p className="text-sm text-muted-foreground mb-1">
-                        <strong>Focus:</strong> {entry.entry.morning.mainFocus}
+                        <strong>Focus:</strong> {entry.main_focus}
                       </p>
                     )}
                     <div className="flex gap-4 text-xs text-muted-foreground">
-                      <span>😴 {entry.entry.morning.sleepQuality}/10</span>
-                      <span>⏰ {entry.entry.morning.sleepHours}h</span>
+                      {entry.sleep_quality && <span>😴 {entry.sleep_quality}/10</span>}
+                      {entry.sleep_hours && <span>⏰ {entry.sleep_hours}h</span>}
                     </div>
                   </div>
                 )}
-                {entry.entry.evening && (
+                {entry.entry_type === 'evening' && (
                   <div className="p-3 bg-blue-50 rounded-lg">
                     <div className="flex items-center gap-2 mb-2">
                       <span className="text-blue-600">🌙</span>
                       <span className="text-sm font-medium text-blue-800">Evening Reflection</span>
                     </div>
                     <div className="flex gap-4 text-xs text-muted-foreground">
-                      <span>😊 {entry.entry.evening.overallMood}/10</span>
-                      <span>⚡ {entry.entry.evening.energyLevel}/10</span>
-                      <span>✅ {entry.entry.evening.completedGoals.length} goals</span>
+                      {entry.overall_mood && <span>😊 {entry.overall_mood}/10</span>}
+                      {entry.evening_energy && <span>⚡ {entry.evening_energy}/10</span>}
+                      {entry.completed_goals && <span>✅ {(entry.completed_goals as string[]).length} goals</span>}
                     </div>
                   </div>
                 )}

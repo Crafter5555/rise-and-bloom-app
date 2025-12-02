@@ -112,11 +112,16 @@ export const useRealStats = () => {
         .slice(0, 3)
         .map(([hour, count]) => ({ hour: parseInt(hour), count }));
 
+      // Calculate focus score based on completion rate and habit consistency
+      const focusScore = Math.round(
+        (taskCompletionRate * 0.4 + habitSuccessRate * 0.4 + (weeklyTotal > 0 ? (weeklyCompleted / weeklyTotal) * 100 : 0) * 0.2) / 10
+      );
+
       return {
         overview: {
           currentStreak,
           goalsHit: goals?.filter(g => (g.progress || 0) >= (g.target_value || 100)).length || 0,
-          focusScore: Math.round(Math.random() * 3 + 7), // Mock for now
+          focusScore: Math.min(10, Math.max(1, focusScore)),
           habitSuccessRate,
           weeklyCompletionRate: weeklyTotal > 0 ? Math.round((weeklyCompleted / weeklyTotal) * 100) : 0
         },
