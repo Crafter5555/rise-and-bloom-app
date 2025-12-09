@@ -56,7 +56,14 @@ export const useHabits = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setHabits(data || []);
+      // Cast data to Habit[] and add default values for missing streak fields
+      const habitsWithDefaults = (data || []).map(habit => ({
+        ...habit,
+        frequency: habit.frequency as Habit['frequency'],
+        current_streak: (habit as any).current_streak ?? 0,
+        longest_streak: (habit as any).longest_streak ?? 0
+      }));
+      setHabits(habitsWithDefaults);
     } catch (err: any) {
       console.error('Error fetching habits:', err);
       setError(err.message);

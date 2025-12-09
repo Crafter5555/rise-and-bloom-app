@@ -47,90 +47,94 @@ export const useRealBehaviorInsights = () => {
       const twoWeeksAgo = new Date();
       twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
 
-      const [thisWeek, lastWeek] = await Promise.all([
-        supabase
-          .from('app_usage_sessions')
-          .select('app_name, duration_minutes, session_date')
-          .eq('user_id', user.id)
-          .gte('session_date', oneWeekAgo.toISOString().split('T')[0]),
+      try {
+        const [thisWeek, lastWeek] = await Promise.all([
+          (supabase as any)
+            .from('app_usage_sessions')
+            .select('app_name, duration_minutes, session_date')
+            .eq('user_id', user.id)
+            .gte('session_date', oneWeekAgo.toISOString().split('T')[0]),
 
-        supabase
-          .from('app_usage_sessions')
-          .select('app_name, duration_minutes')
-          .eq('user_id', user.id)
-          .gte('session_date', twoWeeksAgo.toISOString().split('T')[0])
-          .lt('session_date', oneWeekAgo.toISOString().split('T')[0])
-      ]);
+          (supabase as any)
+            .from('app_usage_sessions')
+            .select('app_name, duration_minutes')
+            .eq('user_id', user.id)
+            .gte('session_date', twoWeeksAgo.toISOString().split('T')[0])
+            .lt('session_date', oneWeekAgo.toISOString().split('T')[0])
+        ]);
 
-      const thisWeekData = thisWeek.data || [];
-      const lastWeekData = lastWeek.data || [];
+        const thisWeekData = thisWeek.data || [];
+        const lastWeekData = lastWeek.data || [];
 
-      const appStats = thisWeekData.reduce((acc, session) => {
-        if (!acc[session.app_name]) {
-          acc[session.app_name] = {
-            totalMinutes: 0,
-            sessions: 0,
-            thisWeekMinutes: 0
-          };
-        }
-        acc[session.app_name].totalMinutes += session.duration_minutes || 0;
-        acc[session.app_name].sessions += 1;
-        acc[session.app_name].thisWeekMinutes += session.duration_minutes || 0;
-        return acc;
-      }, {} as Record<string, { totalMinutes: number; sessions: number; thisWeekMinutes: number }>);
+        const appStats = thisWeekData.reduce((acc: any, session: any) => {
+          if (!acc[session.app_name]) {
+            acc[session.app_name] = {
+              totalMinutes: 0,
+              sessions: 0,
+              thisWeekMinutes: 0
+            };
+          }
+          acc[session.app_name].totalMinutes += session.duration_minutes || 0;
+          acc[session.app_name].sessions += 1;
+          acc[session.app_name].thisWeekMinutes += session.duration_minutes || 0;
+          return acc;
+        }, {} as Record<string, { totalMinutes: number; sessions: number; thisWeekMinutes: number }>);
 
-      const lastWeekStats = lastWeekData.reduce((acc, session) => {
-        if (!acc[session.app_name]) {
-          acc[session.app_name] = 0;
-        }
-        acc[session.app_name] += session.duration_minutes || 0;
-        return acc;
-      }, {} as Record<string, number>);
+        const lastWeekStats = lastWeekData.reduce((acc: any, session: any) => {
+          if (!acc[session.app_name]) {
+            acc[session.app_name] = 0;
+          }
+          acc[session.app_name] += session.duration_minutes || 0;
+          return acc;
+        }, {} as Record<string, number>);
 
-      const appIcons: Record<string, string> = {
-        'Instagram': '📸',
-        'YouTube': '▶️',
-        'TikTok': '🎵',
-        'Twitter': '🐦',
-        'Facebook': '👥',
-        'LinkedIn': '💼',
-        'Reddit': '🔶',
-        'Gmail': '📧'
-      };
+        const appIcons: Record<string, string> = {
+          'Instagram': '📸',
+          'YouTube': '▶️',
+          'TikTok': '🎵',
+          'Twitter': '🐦',
+          'Facebook': '👥',
+          'LinkedIn': '💼',
+          'Reddit': '🔶',
+          'Gmail': '📧'
+        };
 
-      const insights: BehaviorInsight[] = Object.entries(appStats)
-        .map(([appName, stats]) => {
-          const lastWeekMinutes = lastWeekStats[appName] || 0;
-          const changePercent = lastWeekMinutes > 0
-            ? Math.round(((stats.thisWeekMinutes - lastWeekMinutes) / lastWeekMinutes) * 100)
-            : 0;
+        const insights: BehaviorInsight[] = Object.entries(appStats)
+          .map(([appName, stats]: [string, any]) => {
+            const lastWeekMinutes = lastWeekStats[appName] || 0;
+            const changePercent = lastWeekMinutes > 0
+              ? Math.round(((stats.thisWeekMinutes - lastWeekMinutes) / lastWeekMinutes) * 100)
+              : 0;
 
-          const hours = Math.floor(stats.totalMinutes / 60);
-          const minutes = stats.totalMinutes % 60;
-          const avgSessionMinutes = Math.round(stats.totalMinutes / stats.sessions);
+            const hours = Math.floor(stats.totalMinutes / 60);
+            const minutes = stats.totalMinutes % 60;
+            const avgSessionMinutes = Math.round(stats.totalMinutes / stats.sessions);
 
-          return {
-            app: appName,
-            icon: appIcons[appName] || '📱',
-            change: `${changePercent > 0 ? '+' : ''}${changePercent}%`,
-            direction: changePercent > 0 ? 'up' as const : 'down' as const,
-            hours: `${hours}h ${minutes}m`,
-            sessions: stats.sessions,
-            avgSession: `${avgSessionMinutes}m`,
-            insight: avgSessionMinutes < 5 ? 'Quick frequent sessions' :
-                     avgSessionMinutes > 15 ? 'Extended usage sessions' : 'Moderate sessions',
-            attention: avgSessionMinutes < 5 ? 'low' as const :
-                      avgSessionMinutes > 15 ? 'high' as const : 'medium' as const
-          };
-        })
-        .sort((a, b) => {
-          const aMinutes = parseInt(a.hours.split('h')[0]) * 60 + parseInt(a.hours.split('h')[1]);
-          const bMinutes = parseInt(b.hours.split('h')[0]) * 60 + parseInt(b.hours.split('h')[1]);
-          return bMinutes - aMinutes;
-        })
-        .slice(0, 10);
+            return {
+              app: appName,
+              icon: appIcons[appName] || '📱',
+              change: `${changePercent > 0 ? '+' : ''}${changePercent}%`,
+              direction: changePercent > 0 ? 'up' as const : 'down' as const,
+              hours: `${hours}h ${minutes}m`,
+              sessions: stats.sessions,
+              avgSession: `${avgSessionMinutes}m`,
+              insight: avgSessionMinutes < 5 ? 'Quick frequent sessions' :
+                       avgSessionMinutes > 15 ? 'Extended usage sessions' : 'Moderate sessions',
+              attention: avgSessionMinutes < 5 ? 'low' as const :
+                        avgSessionMinutes > 15 ? 'high' as const : 'medium' as const
+            };
+          })
+          .sort((a, b) => {
+            const aMinutes = parseInt(a.hours.split('h')[0]) * 60 + parseInt(a.hours.split('h')[1]);
+            const bMinutes = parseInt(b.hours.split('h')[0]) * 60 + parseInt(b.hours.split('h')[1]);
+            return bMinutes - aMinutes;
+          })
+          .slice(0, 10);
 
-      return insights;
+        return insights;
+      } catch {
+        return [];
+      }
     },
     enabled: !!user?.id
   });
@@ -140,47 +144,51 @@ export const useRealBehaviorInsights = () => {
     queryFn: async () => {
       if (!user?.id) return null;
 
-      const [focusSessionsResult, deviceStatsResult] = await Promise.all([
-        supabase
-          .from('focus_sessions')
-          .select('duration_minutes, interruptions, quality_rating')
-          .eq('user_id', user.id)
-          .gte('start_time', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
+      try {
+        const [focusSessionsResult, deviceStatsResult] = await Promise.all([
+          (supabase as any)
+            .from('focus_sessions')
+            .select('duration_minutes, interruptions, quality_rating')
+            .eq('user_id', user.id)
+            .gte('start_time', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
 
-        supabase
-          .from('daily_device_stats')
-          .select('focus_score, total_pickups')
-          .eq('user_id', user.id)
-          .gte('stat_date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
-      ]);
+          (supabase as any)
+            .from('daily_device_stats')
+            .select('focus_score, total_pickups')
+            .eq('user_id', user.id)
+            .gte('stat_date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
+        ]);
 
-      const focusSessions = focusSessionsResult.data || [];
-      const deviceStats = deviceStatsResult.data || [];
+        const focusSessions = focusSessionsResult.data || [];
+        const deviceStats = deviceStatsResult.data || [];
 
-      const avgFocusScore = deviceStats.length > 0
-        ? deviceStats.reduce((sum, stat) => sum + (stat.focus_score || 0), 0) / deviceStats.length
-        : 6.5;
+        const avgFocusScore = deviceStats.length > 0
+          ? deviceStats.reduce((sum: number, stat: any) => sum + (stat.focus_score || 0), 0) / deviceStats.length
+          : 6.5;
 
-      const totalDeepWorkMinutes = focusSessions.reduce((sum, session) => sum + (session.duration_minutes || 0), 0);
-      const deepWorkHours = Math.floor(totalDeepWorkMinutes / 60);
-      const deepWorkMinutes = totalDeepWorkMinutes % 60;
+        const totalDeepWorkMinutes = focusSessions.reduce((sum: number, session: any) => sum + (session.duration_minutes || 0), 0);
+        const deepWorkHours = Math.floor(totalDeepWorkMinutes / 60);
+        const deepWorkMinutes = totalDeepWorkMinutes % 60;
 
-      const avgSessionDuration = focusSessions.length > 0
-        ? focusSessions.reduce((sum, session) => sum + (session.duration_minutes || 0), 0) / focusSessions.length
-        : 4.5;
+        const avgSessionDuration = focusSessions.length > 0
+          ? focusSessions.reduce((sum: number, session: any) => sum + (session.duration_minutes || 0), 0) / focusSessions.length
+          : 4.5;
 
-      const totalInterruptions = deviceStats.reduce((sum, stat) => sum + (stat.total_pickups || 0), 0);
-      const avgInterruptions = Math.round(totalInterruptions / Math.max(deviceStats.length, 1));
+        const totalInterruptions = deviceStats.reduce((sum: number, stat: any) => sum + (stat.total_pickups || 0), 0);
+        const avgInterruptions = Math.round(totalInterruptions / Math.max(deviceStats.length, 1));
 
-      const metrics: AttentionMetrics = {
-        focusScore: Math.round(avgFocusScore * 10) / 10,
-        attentionSpan: `${Math.floor(avgSessionDuration)}m ${Math.round((avgSessionDuration % 1) * 60)}s`,
-        deepWork: `${deepWorkHours}h ${deepWorkMinutes}m`,
-        interruptions: avgInterruptions,
-        multitasking: Math.min(100, Math.round((avgInterruptions / 30) * 100))
-      };
+        const metrics: AttentionMetrics = {
+          focusScore: Math.round(avgFocusScore * 10) / 10,
+          attentionSpan: `${Math.floor(avgSessionDuration)}m ${Math.round((avgSessionDuration % 1) * 60)}s`,
+          deepWork: `${deepWorkHours}h ${deepWorkMinutes}m`,
+          interruptions: avgInterruptions,
+          multitasking: Math.min(100, Math.round((avgInterruptions / 30) * 100))
+        };
 
-      return metrics;
+        return metrics;
+      } catch {
+        return null;
+      }
     },
     enabled: !!user?.id
   });
@@ -190,13 +198,6 @@ export const useRealBehaviorInsights = () => {
     queryFn: async () => {
       if (!user?.id) return [];
 
-      const { data: patterns } = await supabase
-        .from('behavioral_patterns')
-        .select('pattern_type, pattern_data, confidence_score')
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-        .in('pattern_type', ['peak_distraction', 'focus_window']);
-
       const defaultPatterns: DistractionPattern[] = [
         { time: '9-11 AM', intensity: 40, label: 'Light browsing' },
         { time: '1-3 PM', intensity: 85, label: 'Heavy scrolling' },
@@ -204,15 +205,26 @@ export const useRealBehaviorInsights = () => {
         { time: '10 PM+', intensity: 60, label: 'Wind-down browsing' }
       ];
 
-      if (!patterns || patterns.length === 0) {
+      try {
+        const { data: patterns } = await (supabase as any)
+          .from('behavioral_patterns')
+          .select('pattern_type, pattern_data, confidence_score')
+          .eq('user_id', user.id)
+          .eq('is_active', true)
+          .in('pattern_type', ['peak_distraction', 'focus_window']);
+
+        if (!patterns || patterns.length === 0) {
+          return defaultPatterns;
+        }
+
+        return patterns.map((p: any) => ({
+          time: p.pattern_data?.time_window || '9-5 PM',
+          intensity: Math.round((p.confidence_score || 0.5) * 100),
+          label: p.pattern_data?.label || 'Activity detected'
+        }));
+      } catch {
         return defaultPatterns;
       }
-
-      return patterns.map(p => ({
-        time: (p.pattern_data as any).time_window || '9-5 PM',
-        intensity: Math.round((p.confidence_score || 0.5) * 100),
-        label: (p.pattern_data as any).label || 'Activity detected'
-      }));
     },
     enabled: !!user?.id
   });
@@ -221,14 +233,6 @@ export const useRealBehaviorInsights = () => {
     queryKey: ['session-triggers', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-
-      const { data: stats } = await supabase
-        .from('daily_device_stats')
-        .select('total_pickups, first_pickup_time')
-        .eq('user_id', user.id)
-        .gte('stat_date', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
-
-      const totalPickups = stats?.reduce((sum, stat) => sum + (stat.total_pickups || 0), 0) || 0;
 
       const triggers: SessionTrigger[] = [
         { trigger: 'Boredom/Habit', percentage: 43, color: 'bg-red-500' },

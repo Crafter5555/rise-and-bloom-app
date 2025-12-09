@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useSubscription } from './useSubscription';
 
 export interface FeatureAccess {
@@ -10,8 +9,53 @@ export interface FeatureAccess {
   featureName?: string;
 }
 
+// Local entitlement definitions since the table may not exist
+const ENTITLEMENTS: Record<string, Record<string, { access_level: string; feature_name: string }>> = {
+  free: {
+    basic_habits: { access_level: 'full', feature_name: 'Basic Habits' },
+    basic_tasks: { access_level: 'full', feature_name: 'Basic Tasks' },
+    basic_journal: { access_level: 'write', feature_name: 'Basic Journal' },
+    ai_coach: { access_level: 'read', feature_name: 'AI Life Coach' },
+    insights: { access_level: 'read', feature_name: 'Insights' },
+  },
+  premium: {
+    basic_habits: { access_level: 'full', feature_name: 'Basic Habits' },
+    basic_tasks: { access_level: 'full', feature_name: 'Basic Tasks' },
+    basic_journal: { access_level: 'full', feature_name: 'Basic Journal' },
+    ai_coach: { access_level: 'full', feature_name: 'AI Life Coach' },
+    insights: { access_level: 'full', feature_name: 'Insights' },
+    advanced_analytics: { access_level: 'full', feature_name: 'Advanced Analytics' },
+    guided_journeys: { access_level: 'full', feature_name: 'Guided Journeys' },
+  },
+  coach_plus: {
+    basic_habits: { access_level: 'full', feature_name: 'Basic Habits' },
+    basic_tasks: { access_level: 'full', feature_name: 'Basic Tasks' },
+    basic_journal: { access_level: 'full', feature_name: 'Basic Journal' },
+    ai_coach: { access_level: 'full', feature_name: 'AI Life Coach' },
+    insights: { access_level: 'full', feature_name: 'Insights' },
+    advanced_analytics: { access_level: 'full', feature_name: 'Advanced Analytics' },
+    guided_journeys: { access_level: 'full', feature_name: 'Guided Journeys' },
+    priority_support: { access_level: 'full', feature_name: 'Priority Support' },
+  },
+};
+
+function getEntitlement(tier: string, featureKey: string) {
+  const tierEntitlements = ENTITLEMENTS[tier] || ENTITLEMENTS.free;
+  return tierEntitlements[featureKey] || null;
+}
+
+function getRequiredTier(featureKey: string): { tier: string; feature_name: string } | null {
+  for (const tier of ['free', 'premium', 'coach_plus']) {
+    const entitlement = ENTITLEMENTS[tier]?.[featureKey];
+    if (entitlement && entitlement.access_level !== 'none') {
+      return { tier, feature_name: entitlement.feature_name };
+    }
+  }
+  return null;
+}
+
 export function useEntitlementGate(featureKey: string) {
-  const { subscription, tier, loading: subscriptionLoading } = useSubscription();
+  const { tier, loading: subscriptionLoading } = useSubscription();
   const [access, setAccess] = useState<FeatureAccess>({
     hasAccess: false,
     accessLevel: 'none',
@@ -25,48 +69,24 @@ export function useEntitlementGate(featureKey: string) {
     checkAccess();
   }, [featureKey, tier, subscriptionLoading]);
 
-  async function checkAccess() {
-    try {
-      setLoading(true);
+  function checkAccess() {
+    setLoading(true);
 
-      const { data, error } = await supabase
-        .from('entitlements')
-        .select('*')
-        .eq('tier', tier)
-        .eq('feature_key', featureKey)
-        .maybeSingle();
+    const entitlement = getEntitlement(tier, featureKey);
+    const hasAccess = entitlement ? entitlement.access_level !== 'none' : false;
+    const accessLevel = (entitlement?.access_level || 'none') as FeatureAccess['accessLevel'];
 
-      if (error) throw error;
+    const requiredTierData = getRequiredTier(featureKey);
 
-      const hasAccess = data ? data.access_level !== 'none' : false;
-      const accessLevel = data?.access_level || 'none';
+    setAccess({
+      hasAccess,
+      accessLevel,
+      currentTier: tier,
+      requiredTier: requiredTierData?.tier,
+      featureName: requiredTierData?.feature_name || featureKey
+    });
 
-      const requiredTierData = await supabase
-        .from('entitlements')
-        .select('tier, feature_name')
-        .eq('feature_key', featureKey)
-        .neq('access_level', 'none')
-        .order('tier', { ascending: true })
-        .limit(1)
-        .maybeSingle();
-
-      setAccess({
-        hasAccess,
-        accessLevel,
-        currentTier: tier,
-        requiredTier: requiredTierData.data?.tier,
-        featureName: requiredTierData.data?.feature_name || featureKey
-      });
-    } catch (err) {
-      console.error('Error checking feature access:', err);
-      setAccess({
-        hasAccess: false,
-        accessLevel: 'none',
-        currentTier: tier
-      });
-    } finally {
-      setLoading(false);
-    }
+    setLoading(false);
   }
 
   const requireAccess = useCallback((accessLevel: 'read' | 'write' | 'full' = 'read'): boolean => {
@@ -113,38 +133,25 @@ export function useMultipleEntitlements(featureKeys: string[]) {
     checkMultipleAccess();
   }, [featureKeys, tier, subscriptionLoading]);
 
-  async function checkMultipleAccess() {
-    try {
-      setLoading(true);
+  function checkMultipleAccess() {
+    setLoading(true);
 
-      const { data, error } = await supabase
-        .from('entitlements')
-        .select('*')
-        .eq('tier', tier)
-        .in('feature_key', featureKeys);
+    const accessMap: Record<string, FeatureAccess> = {};
 
-      if (error) throw error;
+    for (const key of featureKeys) {
+      const entitlement = getEntitlement(tier, key);
+      const hasAccess = entitlement ? entitlement.access_level !== 'none' : false;
 
-      const accessMap: Record<string, FeatureAccess> = {};
-
-      for (const key of featureKeys) {
-        const entitlement = data?.find(e => e.feature_key === key);
-        const hasAccess = entitlement ? entitlement.access_level !== 'none' : false;
-
-        accessMap[key] = {
-          hasAccess,
-          accessLevel: entitlement?.access_level || 'none',
-          currentTier: tier,
-          featureName: entitlement?.feature_name || key
-        };
-      }
-
-      setEntitlements(accessMap);
-    } catch (err) {
-      console.error('Error checking multiple feature access:', err);
-    } finally {
-      setLoading(false);
+      accessMap[key] = {
+        hasAccess,
+        accessLevel: (entitlement?.access_level || 'none') as FeatureAccess['accessLevel'],
+        currentTier: tier,
+        featureName: entitlement?.feature_name || key
+      };
     }
+
+    setEntitlements(accessMap);
+    setLoading(false);
   }
 
   return { entitlements, loading, refresh: checkMultipleAccess };

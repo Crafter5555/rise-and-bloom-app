@@ -48,7 +48,7 @@ export const useDailyPlans = (date?: string) => {
         .order('scheduled_time', { ascending: true, nullsFirst: false });
 
       if (error) throw error;
-      setPlans(data || []);
+      setPlans((data || []) as DailyPlan[]);
     } catch (err: any) {
       console.error('Error fetching daily plans:', err);
       setError(err.message);
@@ -107,7 +107,7 @@ export const useDailyPlans = (date?: string) => {
           item_type: itemType,
           item_id: itemId,
           scheduled_time: scheduledTime,
-        })
+        } as any)
         .select()
         .single();
 
