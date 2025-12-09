@@ -42,7 +42,7 @@ export const useJournal = () => {
   const fetchEntries = async (limit?: number) => {
     try {
       setLoading(true);
-      let query = supabase
+      let query = (supabase as any)
         .from('journal_entries')
         .select('*')
         .eq('user_id', user!.id)
@@ -55,7 +55,7 @@ export const useJournal = () => {
       const { data, error } = await query;
 
       if (error) throw error;
-      setEntries(data || []);
+      setEntries((data || []) as JournalEntry[]);
     } catch (err: any) {
       console.error('Error fetching journal entries:', err);
       setError(err.message);
@@ -70,7 +70,7 @@ export const useJournal = () => {
     entryData: Partial<JournalEntry>
   ) => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('journal_entries')
         .upsert({
           user_id: user!.id,
@@ -97,7 +97,7 @@ export const useJournal = () => {
 
   const getEntry = async (entryDate: string, entryType: 'morning' | 'evening') => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('journal_entries')
         .select('*')
         .eq('user_id', user!.id)
@@ -106,7 +106,7 @@ export const useJournal = () => {
         .maybeSingle();
 
       if (error) throw error;
-      return { data, error: null };
+      return { data: data as JournalEntry | null, error: null };
     } catch (err: any) {
       console.error('Error fetching journal entry:', err);
       return { data: null, error: err.message };
@@ -125,7 +125,7 @@ export const useJournal = () => {
 
   const deleteEntry = async (id: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('journal_entries')
         .delete()
         .eq('id', id)
@@ -148,7 +148,7 @@ export const useJournal = () => {
       startDate.setDate(startDate.getDate() - days);
       const startDateStr = startDate.toISOString().split('T')[0];
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('journal_entries')
         .select('*')
         .eq('user_id', user!.id)
@@ -156,7 +156,7 @@ export const useJournal = () => {
         .order('entry_date', { ascending: false });
 
       if (error) throw error;
-      return { data: data || [], error: null };
+      return { data: (data || []) as JournalEntry[], error: null };
     } catch (err: any) {
       console.error('Error fetching recent entries:', err);
       return { data: [], error: err.message };
@@ -165,7 +165,7 @@ export const useJournal = () => {
 
   const getStreak = async (): Promise<number> => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('journal_entries')
         .select('entry_date')
         .eq('user_id', user!.id)
@@ -175,7 +175,7 @@ export const useJournal = () => {
       if (error) throw error;
       if (!data || data.length === 0) return 0;
 
-      const uniqueDates = [...new Set(data.map(e => e.entry_date))];
+      const uniqueDates = [...new Set((data as { entry_date: string }[]).map(e => e.entry_date))];
       uniqueDates.sort().reverse();
 
       let streak = 0;

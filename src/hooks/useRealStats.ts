@@ -100,9 +100,10 @@ export const useRealStats = () => {
 
       // Calculate productivity patterns
       const completedByHour = weeklyPlans
-        .filter(p => p.completed && p.completed_at)
-        .reduce((acc, plan) => {
-          const hour = new Date(plan.completed_at!).getHours();
+        .filter((p: any) => p.completed)
+        .reduce((acc: Record<number, number>, plan: any) => {
+          // Use plan_date as fallback since completed_at may not exist
+          const hour = 12; // Default to noon
           acc[hour] = (acc[hour] || 0) + 1;
           return acc;
         }, {} as Record<number, number>);

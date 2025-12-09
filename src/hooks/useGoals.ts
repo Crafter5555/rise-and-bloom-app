@@ -46,7 +46,7 @@ export const useGoals = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setGoals(data || []);
+      setGoals((data || []) as Goal[]);
     } catch (err: any) {
       console.error('Error fetching goals:', err);
       setError(err.message);

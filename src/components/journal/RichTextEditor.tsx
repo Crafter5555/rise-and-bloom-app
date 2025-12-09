@@ -192,13 +192,13 @@ export const RichTextEditor = ({
         suppressContentEditableWarning={true}
       />
 
-      <style jsx>{`
-        [contenteditable]:empty:before {
+      <style dangerouslySetInnerHTML={{ __html: `
+        [contenteditable][data-placeholder]:empty:before {
           content: attr(data-placeholder);
           color: #9ca3af;
           pointer-events: none;
         }
-      `}</style>
+      ` }} />
     </div>
   );
 };

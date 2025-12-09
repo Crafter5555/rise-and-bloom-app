@@ -3,7 +3,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js'
 import { supabase } from '@/integrations/supabase/client';
 import { cleanupAuthState, performSecureSignOut } from '@/utils/authCleanup';
-import { setUser, clearUser } from '@/utils/sentry';
+import { setUser as setSentryUser, clearUser } from '@/utils/sentry';
 
 interface AuthContextType {
   user: User | null;
@@ -42,7 +42,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         // Update error reporting context
         if (currentUser) {
-          setUser({
+          setSentryUser({
             id: currentUser.id,
             email: currentUser.email,
           });
@@ -68,7 +68,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // Set initial user context for error reporting
       if (currentUser) {
-        setUser({
+        setSentryUser({
           id: currentUser.id,
           email: currentUser.email,
         });

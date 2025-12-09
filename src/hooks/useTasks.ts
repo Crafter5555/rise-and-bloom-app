@@ -46,7 +46,7 @@ export const useTasks = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setTasks(data || []);
+      setTasks((data || []) as Task[]);
     } catch (err: any) {
       console.error('Error fetching tasks:', err);
       setError(err.message);

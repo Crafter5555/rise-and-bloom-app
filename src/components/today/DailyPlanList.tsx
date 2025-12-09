@@ -226,14 +226,8 @@ export const DailyPlanList = () => {
       setLastSyncTime(new Date());
     } catch (error) {
       console.error('Error updating daily plan:', error);
-      // Revert optimistic update on error
-      setDailyPlans(items => 
-        items.map(item => 
-          item.id === id 
-            ? { ...item, completed: !newCompleted, completed_at: item.completed_at }
-            : item
-        )
-      );
+      // Revert optimistic update on error - refetch to get correct state
+      fetchDailyPlans();
       toast({
         title: "Update Failed",
         description: "Unable to save changes. Please try again.",

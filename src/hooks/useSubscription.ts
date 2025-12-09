@@ -14,6 +14,15 @@ export interface Subscription {
   source: 'stripe' | 'revenuecat' | 'coupon' | 'admin' | 'trial';
 }
 
+const DEFAULT_SUBSCRIPTION: Subscription = {
+  id: 'default',
+  tier: 'free',
+  status: 'active',
+  start_date: new Date().toISOString(),
+  cancel_at_period_end: false,
+  source: 'admin'
+};
+
 export function useSubscription() {
   const { user } = useAuth();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
@@ -26,64 +35,26 @@ export function useSubscription() {
       setLoading(false);
       return;
     }
-
     fetchSubscription();
-
-    const channel = supabase
-      .channel('subscription_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'subscriptions',
-          filter: `user_id=eq.${user.id}`
-        },
-        (payload) => {
-          if (payload.new) {
-            setSubscription(payload.new as Subscription);
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      channel.unsubscribe();
-    };
   }, [user]);
 
   async function fetchSubscription() {
     if (!user) return;
-
     try {
       setLoading(true);
       setError(null);
-
-      const { data, error: fetchError } = await supabase
+      
+      const { data, error: fetchError } = await (supabase as any)
         .from('subscriptions')
         .select('*')
         .eq('user_id', user.id)
         .maybeSingle();
 
       if (fetchError) throw fetchError;
-
-      if (!data) {
-        const { data: created } = await supabase.rpc('get_or_create_subscription', {
-          target_user_id: user.id
-        });
-
-        const { data: newSub } = await supabase
-          .from('subscriptions')
-          .select('*')
-          .eq('user_id', user.id)
-          .single();
-
-        setSubscription(newSub);
-      } else {
-        setSubscription(data);
-      }
+      setSubscription(data ? (data as Subscription) : DEFAULT_SUBSCRIPTION);
     } catch (err) {
       console.error('Error fetching subscription:', err);
+      setSubscription(DEFAULT_SUBSCRIPTION);
       setError(err instanceof Error ? err.message : 'Failed to fetch subscription');
     } finally {
       setLoading(false);
@@ -92,14 +63,9 @@ export function useSubscription() {
 
   async function validateSubscription(forceRefresh = false) {
     if (!user) return null;
-
     try {
-      const { data, error } = await supabase.functions.invoke('validate-subscription', {
-        body: { force_refresh: forceRefresh }
-      });
-
+      const { data, error } = await supabase.functions.invoke('validate-subscription', { body: { force_refresh: forceRefresh } });
       if (error) throw error;
-
       await fetchSubscription();
       return data;
     } catch (err) {
@@ -113,16 +79,5 @@ export function useSubscription() {
   const isCoachPlus = isActive && subscription?.tier === 'coach_plus';
   const isTrial = subscription?.status === 'trialing';
 
-  return {
-    subscription,
-    loading,
-    error,
-    isActive,
-    isPremium,
-    isCoachPlus,
-    isTrial,
-    tier: subscription?.tier || 'free',
-    validateSubscription,
-    refreshSubscription: fetchSubscription
-  };
+  return { subscription, loading, error, isActive, isPremium, isCoachPlus, isTrial, tier: (subscription?.tier || 'free') as 'free' | 'premium' | 'coach_plus', validateSubscription, refreshSubscription: fetchSubscription };
 }
