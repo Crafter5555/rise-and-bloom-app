@@ -16,9 +16,8 @@ export default function Protocol() {
   const d = today();
   const checks = s.routineChecks[d] ?? [];
   const missions = s.todos.filter((t) => t.kind === "mission" && !t.done).slice(0, 3);
-  const total = s.routine.length + missions.length;
   const done = checks.length;
-  const pct = total ? Math.round((done / s.routine.length || 0) * 100) : 0;
+  const pct = s.routine.length ? Math.round((done / s.routine.length) * 100) : 0;
 
   const toggle = (id: string) => set((st) => {
     const cur = st.routineChecks[d] ?? [];
