@@ -1,70 +1,33 @@
 import { useLocation, useNavigate } from "react-router-dom";
+import { ListChecks, Dumbbell, Crosshair, Hash, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useMobile } from "@/hooks/useMobile";
-import { ImpactStyle } from "@capacitor/haptics";
+import { tap } from "@/iron/ui";
 
 const navigation = [
-  {
-    name: "Today",
-    path: "/",
-    icon: "🎯"
-  },
-  {
-    name: "Planning", 
-    path: "/planning",
-    icon: "📋"
-  },
-  {
-    name: "Journal",
-    path: "/journal", 
-    icon: "📖"
-  },
-  {
-    name: "Calendar",
-    path: "/calendar",
-    icon: "📅"
-  },
-  {
-    name: "Community",
-    path: "/community",
-    icon: "👥"
-  },
-  {
-    name: "Insights",
-    path: "/insights",
-    icon: "🧠"
-  }
+  { name: "Protocol", path: "/", icon: ListChecks },
+  { name: "Training", path: "/workouts", icon: Dumbbell },
+  { name: "Actions", path: "/actions", icon: Crosshair },
+  { name: "Board", path: "/board", icon: Hash },
+  { name: "Stats", path: "/stats", icon: BarChart3 },
 ];
 
 export const BottomNavigation = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { hapticFeedback } = useMobile();
-
-  const handleNavigation = async (path: string) => {
-    await hapticFeedback(ImpactStyle.Light);
-    navigate(path);
-  };
+  if (location.pathname === "/auth") return null;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-background border-t border-border shadow-strong backdrop-blur-md bg-background/95">
-      <div className="flex items-center justify-around py-2 px-4 max-w-md mx-auto">
+    <nav className="fixed bottom-0 inset-x-0 z-40 bg-card/95 backdrop-blur border-t border-border pb-[env(safe-area-inset-bottom)]">
+      <div className="grid grid-cols-5 max-w-md mx-auto">
         {navigation.map((item) => {
-          const isActive = location.pathname === item.path;
+          const active = location.pathname === item.path;
+          const Icon = item.icon;
           return (
-            <button
-              key={item.name}
-              onClick={() => handleNavigation(item.path)}
-              className={cn(
-                "flex flex-col items-center py-2 px-3 rounded-xl transition-all duration-200",
-                "min-w-[60px] text-xs font-semibold",
-                isActive
-                  ? "text-primary bg-primary/10 shadow-golden scale-105"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
-              )}
-            >
-              <span className="text-lg mb-1">{item.icon}</span>
-              <span className="tracking-wide">{item.name}</span>
+            <button key={item.name} onClick={() => { tap(); navigate(item.path); }}
+              className={cn("flex flex-col items-center justify-center h-16 gap-1 font-display text-[11px] transition-colors",
+                active ? "text-primary" : "text-muted-foreground")}>
+              <Icon className="w-5 h-5" strokeWidth={active ? 2.5 : 2} />
+              {item.name}
             </button>
           );
         })}

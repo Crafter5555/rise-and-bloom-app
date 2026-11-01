@@ -69,7 +69,7 @@ export const DebugDataView = () => {
       };
 
       const info: DebugInfo = {
-        environment: process.env.NODE_ENV as 'development' | 'production',
+        environment: import.meta.env.MODE as 'development' | 'production',
         platform: isNative ? 'mobile' : 'web',
         isNative,
         isOnline: navigator.onLine,

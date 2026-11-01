@@ -23,7 +23,7 @@ export const useLongPress = (
   } = options;
 
   const { hapticFeedback: triggerHaptic } = useMobile();
-  const timeout = useRef<NodeJS.Timeout>();
+  const timeout = useRef<ReturnType<typeof setTimeout>>();
   const target = useRef<EventTarget>();
 
   const start = useCallback(

@@ -89,12 +89,12 @@ class ProductionErrorReporter {
     this.persistReports();
 
     // Log to console in development
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.MODE === 'development') {
       console.error('Error captured:', report);
     }
 
     // In production, send to monitoring service
-    if (process.env.NODE_ENV === 'production') {
+    if (import.meta.env.MODE === 'production') {
       this.sendToMonitoringService(report);
     }
   }

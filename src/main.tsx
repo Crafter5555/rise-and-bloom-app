@@ -7,7 +7,7 @@ import { errorReporter } from './utils/sentry'
 
 // Initialize error reporting
 errorReporter.initialize({
-  environment: process.env.NODE_ENV || 'development'
+  environment: import.meta.env.MODE || 'development'
 });
 
 createRoot(document.getElementById("root")!).render(

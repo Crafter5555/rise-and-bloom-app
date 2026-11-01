@@ -49,7 +49,7 @@ export class ErrorBoundary extends Component<Props, State> {
               The app encountered an unexpected error. Please try refreshing the page.
             </p>
             
-            {process.env.NODE_ENV === 'development' && this.state.error && (
+            {import.meta.env.MODE === 'development' && this.state.error && (
               <div className="mb-4 p-3 bg-muted rounded text-xs text-left overflow-auto">
                 <strong>Error Details:</strong>
                 <pre className="mt-2 whitespace-pre-wrap">

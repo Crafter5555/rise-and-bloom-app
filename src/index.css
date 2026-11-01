@@ -342,3 +342,31 @@ input, textarea, select {
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 150ms;
 }
+
+/* ===== Industrial Khaki & Iron (overrides) ===== */
+:root, .dark {
+  --background: 220 14% 7%;
+  --foreground: 40 12% 92%;
+  --card: 220 12% 10%;
+  --card-foreground: 40 12% 92%;
+  --popover: 220 12% 10%;
+  --popover-foreground: 40 12% 92%;
+  --primary: 66 30% 52%;
+  --primary-foreground: 220 14% 7%;
+  --secondary: 220 10% 15%;
+  --secondary-foreground: 40 12% 92%;
+  --muted: 220 10% 14%;
+  --muted-foreground: 40 6% 58%;
+  --accent: 40 22% 62%;
+  --accent-foreground: 220 14% 7%;
+  --success: 66 30% 52%;
+  --success-foreground: 220 14% 7%;
+  --border: 220 9% 19%;
+  --input: 220 9% 17%;
+  --ring: 66 30% 52%;
+  --radius: 6px;
+  --shadow-golden: none;
+}
+body { font-family: 'Barlow', system-ui, sans-serif; }
+.font-display { font-family: 'Barlow Condensed', 'Barlow', sans-serif; letter-spacing: .04em; text-transform: uppercase; }
+.tabular { font-variant-numeric: tabular-nums; }

@@ -36,7 +36,7 @@ class ErrorReporter {
     console.error('App Error:', errorEntry);
 
     // In production, this would send to a crash reporting service
-    if (process.env.NODE_ENV === 'production') {
+    if (import.meta.env.MODE === 'production') {
       this.sendToCrashReporting(errorEntry);
     }
 
